@@ -16,5 +16,24 @@ jobs:
       - uses: actions/setup-python@v6
         with: {python-version: '3.12'}
       - name: Run non-mutating bridge verification
-        env: {HYDRA_UMC_SDK_ROOT: ${{ github.workspace }}/.hydra-umc-sdk-contract}
+        env:
+          HYDRA_UMC_SDK_ROOT: "${{ github.workspace }}/.hydra-umc-sdk-contract"
         run: python tools/build_test.py
+      - name: Verify isolated incremental version workflow
+        run: |
+          check_dir="$(mktemp -d)"
+          trap 'rm -rf "$check_dir"' EXIT
+          mkdir -p "$check_dir/tools"
+          cp hydra-umc.project.json pyproject.toml CHANGELOG.md "$check_dir/"
+          cp tools/bump_version.py "$check_dir/tools/"
+          python "$check_dir/tools/bump_version.py"
+          python - "$check_dir" <<'PY'
+          import json, re, sys
+          from pathlib import Path
+          root = Path(sys.argv[1])
+          manifest = json.loads((root / "hydra-umc.project.json").read_text())
+          native = re.search(r'(?m)^version\s*=\s*"(\d+\.\d+\.\d+)"', (root / "pyproject.toml").read_text()).group(1)
+          assert manifest["version"] == native
+          assert f"## [{native}]" in (root / "CHANGELOG.md").read_text()
+          print(f"INCREMENTAL_VERSION_CONTRACT=PASS version={native}")
+          PY
