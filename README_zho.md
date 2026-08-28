@@ -40,3 +40,9 @@ ROS 2 节点 <-> BRIDGE-ROS2 <-> HYDRA-UMC-SDK <-> SERVER <-> MCU 安全
 
 版本 `0.0.1` 是经过本地安全测试的无依赖协调核心。尚未验证 ROS 网络、
 机器人或物理执行器。
+
+## ⚙️ 版本化构建
+
+`build-test.bat` / `build-test.sh` 只验证，不修改仓库。`build.bat` /
+`build.sh` 先运行该验证，只有成功后才同步原生包版本、清单和 `CHANGELOG.md`。
+在真实 ROS 2 部署验证前，不提供硬件 `run` 命令。

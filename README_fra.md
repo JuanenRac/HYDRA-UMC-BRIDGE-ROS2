@@ -42,3 +42,10 @@ les contrats ROS et DDS seront ajoutés après test d'un environnement ROS 2 ré
 
 La version `0.0.1` est fonctionnelle comme noyau sans dépendance avec tests de
 sécurité locaux. Aucun réseau ROS, robot ni actionneur physique n'est validé.
+
+## ⚙️ Compilation versionnée
+
+`build-test.bat` / `build-test.sh` valident sans modifier le dépôt.
+`build.bat` / `build.sh` exécutent d'abord cette validation puis, uniquement
+en cas de succès, synchronisent version native, manifeste et `CHANGELOG.md`.
+Il n'existe pas de commande `run` matériel avant validation ROS 2 réelle.

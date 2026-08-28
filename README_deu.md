@@ -42,3 +42,10 @@ erst nach einem Test mit einer echten ROS-2-Umgebung.
 
 Version `0.0.1` ist als abhängigkeitfreier Kern mit lokalen Sicherheitstests
 funktional. ROS-Netz, Roboter und physischer Aktor sind noch nicht validiert.
+
+## ⚙️ Versionierter Build
+
+`build-test.bat` / `build-test.sh` validieren ohne das Repository zu ändern.
+`build.bat` / `build.sh` führen zuerst diese Validierung aus und
+synchronisieren nur bei Erfolg native Version, Manifest und `CHANGELOG.md`.
+Vor einer realen ROS-2-Validierung gibt es keinen Hardware-`run`-Befehl.

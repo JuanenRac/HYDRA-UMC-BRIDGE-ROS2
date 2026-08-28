@@ -41,3 +41,10 @@ saranno aggiunti solo dopo una prova ROS 2 reale.
 
 La versione `0.0.1` è funzionale come nucleo senza dipendenze con test locali.
 Nessuna rete ROS, robot o attuatore fisico è ancora validato.
+
+## ⚙️ Build con versione
+
+`build-test.bat` / `build-test.sh` convalidano senza modificare il repository.
+`build.bat` / `build.sh` eseguono prima tale convalida e, solo se riesce,
+sincronizzano versione nativa, manifesto e `CHANGELOG.md`. Non esiste un
+comando `run` hardware prima di una convalida ROS 2 reale.
