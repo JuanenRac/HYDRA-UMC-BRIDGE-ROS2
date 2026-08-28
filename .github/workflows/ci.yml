@@ -1,0 +1,20 @@
+# =============================================================================
+# HYDRA-UMC-BRIDGE-ROS2 - Continuous integration
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+# =============================================================================
+name: HYDRA-UMC CI baseline
+on: [push, pull_request, workflow_dispatch]
+permissions: {contents: read}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with: {repository: JuanenRac/HYDRA-UMC-SDK, path: .hydra-umc-sdk-contract, ref: main}
+      - uses: actions/setup-python@v6
+        with: {python-version: '3.12'}
+      - name: Run non-mutating bridge verification
+        env: {HYDRA_UMC_SDK_ROOT: ${{ github.workspace }}/.hydra-umc-sdk-contract}
+        run: python tools/build_test.py

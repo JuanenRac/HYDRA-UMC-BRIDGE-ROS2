@@ -15,7 +15,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sdk_source = ROOT.parent / "HYDRA-UMC-SDK" / "clients" / "python" / "src"
+sdk_root = Path(os.environ.get("HYDRA_UMC_SDK_ROOT", ROOT.parent / "HYDRA-UMC-SDK"))
+sdk_source = sdk_root / "clients" / "python" / "src"
 os.environ["PYTHONPATH"] = os.pathsep.join((str(ROOT / "src"), str(sdk_source)))
 for source in (ROOT / "src").rglob("*.py"):
     py_compile.compile(str(source), doraise=True)
