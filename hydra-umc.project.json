@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "ecosystem": "HYDRA-UMC",
+  "name": "HYDRA-UMC-BRIDGE-ROS2",
+  "version": "0.0.1",
+  "role": "service",
+  "stack": "python",
+  "technologies": ["Python", "ROS 2", "HYDRA-UMC-SDK"],
+  "deployment_target": "cm5",
+  "maturity": "functional",
+  "family": "External Automation Bridges",
+  "parent": "HYDRA-UMC-SERVER",
+  "build": "python tools/build_test.py",
+  "notes": "Dependency-free safety coordinator with a ROS 2 interface plan. The optional rclpy runtime is intentionally not installed until it is tested against a real ROS 2 deployment.",
+  "native_version": {"file": "pyproject.toml", "pattern": "^version\\s*=\\s*\"(\\d+)\\.(\\d+)\\.(\\d+)\""}
+}
