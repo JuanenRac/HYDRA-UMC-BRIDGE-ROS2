@@ -45,3 +45,10 @@ integración DDS solo se incorporarán tras seleccionar y probar ROS 2 real.
 La versión `0.0.1` es funcional como núcleo de coordinación sin dependencias
 con pruebas locales de seguridad. Todavía no se ha validado red ROS, robot ni
 actuador físico.
+
+## ⚙️ Compilación con versión
+
+`build-test.bat` / `build-test.sh` validan sin modificar el repositorio.
+`build.bat` / `build.sh` ejecutan primero esa validación y, solo si es
+correcta, sincronizan la versión nativa, el manifiesto y `CHANGELOG.md`. No
+existe un comando `run` de hardware hasta validar un despliegue ROS 2 real.

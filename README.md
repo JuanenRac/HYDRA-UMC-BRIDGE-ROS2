@@ -46,3 +46,10 @@ selected and tested.
 Version `0.0.1` is functional as a dependency-free coordination core with
 local safety tests. No ROS network, robot or physical actuator has been
 validated yet.
+
+## ⚙️ Versioned Build
+
+`build-test.bat` / `build-test.sh` validate without modifying the repository.
+`build.bat` / `build.sh` run that validation first and, only on success,
+synchronize the native package version, manifest and `CHANGELOG.md`. There is
+no live hardware `run` command until a real ROS 2 deployment is validated.
