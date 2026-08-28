@@ -6,6 +6,8 @@ GPL-3.0-or-later - see LICENSE
 
 # HYDRA-UMC-BRIDGE-ROS2
 
+🇺🇸 **English** | [🇪🇸 Español](README_spa.md) | [🇫🇷 Français](README_fra.md) | [🇮🇹 Italiano](README_ita.md) | [🇩🇪 Deutsch](README_deu.md) | [🇨🇳 简体中文](README_zho.md) | [🇯🇵 日本語](README_jpn.md)
+
 Bidirectional, high-level coordination boundary between HYDRA-UMC and ROS 2.
 It maps continuous observation to a topic, immediate inspection to a service,
 and long-running cell work to a cancellable action. It is not a motor-control
