@@ -1,0 +1,22 @@
+# =============================================================================
+# HYDRA-UMC-BRIDGE-ROS2 - Python package metadata
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+# =============================================================================
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hydra-umc-bridge-ros2"
+version = "0.0.1"
+description = "Fail-safe HYDRA-UMC to ROS 2 coordination boundary"
+requires-python = ">=3.11"
+license = {text = "GPL-3.0-or-later"}
+dependencies = [
+  "hydra-umc-sdk @ git+https://github.com/JuanenRac/HYDRA-UMC-SDK.git@main#subdirectory=clients/python"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

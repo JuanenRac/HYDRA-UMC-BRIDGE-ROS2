@@ -1,0 +1,11 @@
+# =============================================================================
+# HYDRA-UMC-BRIDGE-ROS2 - Generated-file exclusions
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+# =============================================================================
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
