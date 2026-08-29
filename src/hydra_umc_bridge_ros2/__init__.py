@@ -8,6 +8,14 @@
 
 from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, MachineState
 
-from .coordinator import Ros2Coordinator
+from .coordinator import Ros2Coordinator, Ros2Dispatch, Ros2InterfacePlan
 
-__all__ = ["BridgeJob", "CellState", "JobPhase", "MachineState", "Ros2Coordinator"]
+__all__ = [
+    "BridgeJob",
+    "CellState",
+    "JobPhase",
+    "MachineState",
+    "Ros2Coordinator",
+    "Ros2Dispatch",
+    "Ros2InterfacePlan",
+]

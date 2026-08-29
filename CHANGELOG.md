@@ -6,6 +6,18 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.0.2] - 2026-08-30
+
+- Made ROS 2 phase routing fail closed: an SDK phase with no explicitly
+  planned route is denied rather than sent to the generic work action.
+- Reserved `/hydra_umc/request_safe_stop` for the planned `ABORT` path and
+  added a static `plan-only` interface schema `1.0`, inspectable without
+  importing `rclpy` or contacting DDS.
+- Compiled all Python tools during build-test and synchronized the English
+  README with all six translated README files.
+- Successful incremental build: synchronized package metadata and
+  `hydra-umc.project.json`.
+
 ## [0.0.1]
 
 - Added dependency-free ROS 2 coordination core, SDK job gate and safety tests.
