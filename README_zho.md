@@ -32,6 +32,7 @@ GPL-3.0-or-later - see LICENSE
 * ✅ **真实的无依赖协调核心:** `coordinator.py` 中的 `Ros2Coordinator` 完全没有导入 `rclpy`——它刻意保持为纯 Python,可以在任何主机上测试,无需安装 ROS 2。*(已实现,并在 `tests/test_coordinator.py` 中测试)*
 * ✅ **真实的三向接口映射:** 三个固定的类属性为每种用途精确保留对应的 ROS 2 接口类型——`/hydra_umc/machine_state`(topic,持续状态)、`/hydra_umc/inspect_cell`(service,短时检查)、`/hydra_umc/execute_cell_job`(action,可取消作业)。*(已实现)*
 * ✅ **真实的共享安全门控:** 每个通过 `Ros2Coordinator.dispatch()` 派发的任务都会由 `HYDRA-UMC-SDK` 的 `bridge_contract` 中的 `evaluate_job()` 评估,这与所有兄弟桥接以及 HYDRA-UMC-SERVER 使用的是同一个门控;生产性阶段需要外部机器处于 `IDLE` 且 HYDRA-UMC 单元处于 `READY`,而 `ABORT` 在故障期间仍可请求。*(已实现)*
+* ✅ **安全拒绝的阶段路由与静态证据:** 生产性阶段只映射到计划的作业操作,`ABORT` 映射到 `/hydra_umc/request_safe_stop`,未知的未来 SDK 阶段会被拒绝。`inspect_interface_plan.py` 会输出静态模式 `1.0` 计划,不导入 `rclpy` 也不联系 DDS。*(已实现,已测试)*
 * ✅ **非变更式构建/测试:** `build-test.bat`/`.sh` 编译源码并运行确定性单元测试,不改变版本或 CHANGELOG。*(已实现,见下方"构建与运行")*
 * 🔜 **`rclpy` 适配器与 ROS `.msg`/`.srv`/`.action` 契约** —— 只有在选定并测试了真实的 ROS 2 环境之后才会引入。*(计划中)*
 
@@ -105,7 +106,7 @@ bash build.sh
 
 ## ✅ 当前状态与后续步骤
 
-**目前真实的部分:** 版本 `0.0.1`,作为一个带有本地安全测试的无依赖协调核心(`Ros2Coordinator`)是功能齐备的,依托 `HYDRA-UMC-SDK` 的共享任务门控,配有确定性的 `unittest` 套件,以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
+**目前真实的部分:** 版本 `0.0.2`,作为一个无依赖协调核心(`Ros2Coordinator`)是功能齐备的,配有五项确定性的本地安全测试、安全拒绝的阶段路由、静态 `plan-only` 接口模式以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
 
 **集成边界:** 本桥接只是一个协调边界——它不是电机控制节点,也不能绕过 HYDRA-UMC-SERVER、MCU 限位、看门狗或急停;每个被派发的任务仍然要经过所有兄弟桥接使用的同一个共享门控。
 

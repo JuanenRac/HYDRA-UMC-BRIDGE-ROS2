@@ -32,6 +32,7 @@ Sie gehört zur Familie **External Automation Bridges**: einer Gruppe von Schwes
 * ✅ **Echter, abhängigkeitsfreier Koordinationskern:** `coordinator.py`s `Ros2Coordinator` hat keinerlei `rclpy`-Import — es ist bewusst reines Python, testbar auf jedem Host ohne ROS-2-Installation. *(implementiert, getestet in `tests/test_coordinator.py`)*
 * ✅ **Echte Drei-Wege-Schnittstellenabbildung:** drei feste Klassenattribute reservieren für jeden Zweck genau die richtige ROS-2-Schnittstellenart — `/hydra_umc/machine_state` (Topic, kontinuierlicher Zustand), `/hydra_umc/inspect_cell` (Service, kurze Inspektion), `/hydra_umc/execute_cell_job` (Action, abbrechbarer Auftrag). *(implementiert)*
 * ✅ **Echtes gemeinsames Sicherheitsgatter:** jeder über `Ros2Coordinator.dispatch()` versendete Auftrag wird durch `evaluate_job()` aus dem `bridge_contract` von `HYDRA-UMC-SDK` bewertet — demselben Gatter, das jede Schwesterbrücke und HYDRA-UMC-SERVER verwenden; eine produktive Phase erfordert eine externe Maschine im Zustand `IDLE` und eine `READY`-HYDRA-UMC-Zelle, während `ABORT` auch während eines Fehlers angefordert werden kann. *(implementiert)*
+* ✅ **Ausfallsicheres Phasenrouting und statische Evidenz:** produktive Phasen werden nur der geplanten Arbeitsaktion zugeordnet, `ABORT` wird `/hydra_umc/request_safe_stop` zugeordnet und eine unbekannte zukünftige SDK-Phase wird abgelehnt. `inspect_interface_plan.py` gibt den statischen Schema-`1.0`-Plan aus, ohne `rclpy` zu importieren oder DDS zu kontaktieren. *(implementiert, getestet)*
 * ✅ **Nicht-mutierender Build/Test:** `build-test.bat`/`.sh` kompilieren den Quellcode und führen deterministische Unit-Tests aus, ohne Version oder CHANGELOG zu ändern. *(implementiert, siehe BUILD & AUSFÜHRUNG unten)*
 * 🔜 **`rclpy`-Adapter und ROS-`.msg`/`.srv`/`.action`-Verträge** — werden erst eingeführt, nachdem eine echte ROS-2-Umgebung ausgewählt und getestet wurde. *(geplant)*
 
@@ -105,7 +106,7 @@ bash build.sh
 
 ## ✅ AKTUELLER STATUS UND NÄCHSTE SCHRITTE
 
-**Heute real:** Version `0.0.1`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`Ros2Coordinator`) mit lokalen Sicherheitstests, gestützt auf das gemeinsame Auftragsgatter von `HYDRA-UMC-SDK`, eine deterministische `unittest`-Suite sowie nicht-mutierende Build-Test-Skripte, die in CI mit SDK-Checkout eingebunden sind.
+**Heute real:** Version `0.0.2`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`Ros2Coordinator`) mit fünf deterministischen lokalen Sicherheitstests, ausfallsicherem Phasenrouting, einem statischen `plan-only`-Schnittstellenschema sowie nicht-mutierenden Build-Test-Skripten, die in CI mit SDK-Checkout eingebunden sind.
 
 **Integrationsgrenze:** diese Brücke ist ausschließlich eine Koordinationsgrenze — sie ist kein Motorsteuerungsknoten und kann HYDRA-UMC-SERVER, MCU-Grenzen, Watchdogs oder den E-STOP nicht umgehen; jeder versendete Auftrag durchläuft weiterhin dasselbe gemeinsame Gatter, das jede Schwesterbrücke verwendet.
 

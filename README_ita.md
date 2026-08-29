@@ -32,6 +32,7 @@ Appartiene alla famiglia **External Automation Bridges**: un insieme di reposito
 * ✅ **Nucleo di coordinamento privo di dipendenze, reale:** `coordinator.py` — `Ros2Coordinator` non importa affatto `rclpy`; è Python semplice deliberatamente, testabile su qualsiasi host senza un'installazione di ROS 2. *(implementato, testato in `tests/test_coordinator.py`)*
 * ✅ **Mappatura a tre interfacce, reale:** tre attributi di classe fissi riservano il tipo esatto di interfaccia ROS 2 per ciascuno scopo — `/hydra_umc/machine_state` (topic, stato continuo), `/hydra_umc/inspect_cell` (service, ispezione breve), `/hydra_umc/execute_cell_job` (action, lavoro annullabile). *(implementato)*
 * ✅ **Porta di sicurezza condivisa, reale:** ogni lavoro inviato tramite `Ros2Coordinator.dispatch()` viene valutato da `evaluate_job()` del `bridge_contract` di `HYDRA-UMC-SDK`, la stessa porta usata da tutti i ponti fratelli e da HYDRA-UMC-SERVER; una fase produttiva richiede una macchina esterna `IDLE` e una cella HYDRA-UMC `READY`, mentre `ABORT` resta richiedibile durante un guasto. *(implementato)*
+* ✅ **Instradamento delle fasi chiuso ed evidenza statica:** le fasi produttive si mappano solo all'azione di lavoro pianificata, `ABORT` si mappa a `/hydra_umc/request_safe_stop` e una futura fase SDK sconosciuta viene negata. `inspect_interface_plan.py` emette il piano statico di schema `1.0` senza importare `rclpy` né contattare DDS. *(implementato, testato)*
 * ✅ **Build/test non mutante:** `build-test.bat`/`.sh` compilano il codice sorgente ed eseguono test unitari deterministici senza cambiare versione o CHANGELOG. *(implementato, vedi COMPILAZIONE ED ESECUZIONE più sotto)*
 * 🔜 **Adattatore `rclpy` e contratti ROS `.msg`/`.srv`/`.action`** — introdotti solo dopo la selezione e il test di un ambiente ROS 2 reale. *(pianificato)*
 
@@ -105,7 +106,7 @@ bash build.sh
 
 ## ✅ STATO ATTUALE E PROSSIMI PASSI
 
-**Reale oggi:** versione `0.0.1`, funzionale come nucleo di coordinamento privo di dipendenze (`Ros2Coordinator`) con test di sicurezza locali, appoggiato sulla porta di lavoro condivisa di `HYDRA-UMC-SDK`, una suite `unittest` deterministica, e script build-test non mutanti collegati alla CI con checkout dell'SDK.
+**Reale oggi:** versione `0.0.2`, funzionale come nucleo di coordinamento privo di dipendenze (`Ros2Coordinator`) con cinque test di sicurezza locali deterministici, instradamento delle fasi chiuso, uno schema di interfaccia statico `plan-only` e script build-test non mutanti collegati alla CI con un checkout dell'SDK.
 
 **Confine di integrazione:** questo ponte è solo un confine di coordinamento — non è un nodo di controllo motore, e non può aggirare HYDRA-UMC-SERVER, i limiti dell'MCU, i watchdog o l'E-STOP; ogni lavoro inviato passa comunque attraverso la stessa porta condivisa usata da tutti i ponti fratelli.
 
