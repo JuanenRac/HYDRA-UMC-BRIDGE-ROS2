@@ -10,13 +10,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hydra-umc-bridge-ros2"
-version = "0.0.3"
+version = "0.0.4"
 description = "Fail-safe HYDRA-UMC to ROS 2 coordination boundary"
 requires-python = ">=3.11"
 license = {text = "GPL-3.0-or-later"}
 dependencies = [
   "hydra-umc-sdk @ git+https://github.com/JuanenRac/HYDRA-UMC-SDK.git@main#subdirectory=clients/python"
 ]
+
+# rclpy/std_srvs/std_msgs are NOT declared as a pip extra here (unlike this
+# ecosystem's other lazily-imported transport dependencies) because they are
+# normally provided by a real ROS 2 distribution install (apt/conda), not a
+# standalone PyPI package - rclpy_transport.py's own lazy imports degrade
+# cleanly either way (see its own docstring).
 
 [tool.setuptools.packages.find]
 where = ["src"]

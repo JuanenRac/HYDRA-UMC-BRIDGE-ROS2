@@ -6,6 +6,33 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.0.4] - Real, partial rclpy transport (pre-real: connected where honest, not simulated)
+
+- **`rclpy_transport.py`** (new) - this bridge's first real transport, for
+  only the 2 of 4 interfaces that have a real, standard ROS 2 message type
+  today - deliberately does not invent a type for the other 2:
+  - `Ros2SafeStopClient.call()` calls the real `safe_stop_service` via a
+    real `std_srvs/srv/Trigger` client (empty request,
+    `{success, message}` response) - a real, common ROS 2 pattern ROS 2
+    ships by default.
+  - `Ros2StateSubscriber.subscribe()` subscribes to the real `state_topic`
+    via a real `std_msgs/msg/String` subscription, using the real
+    `transient_local` durability QoS this coordinator already declares
+    (v1.1 interface plan).
+  - `inspect_service`/`job_action` still need a custom `.srv`/`.action`
+    definition this repository doesn't have yet - building a client
+    against an invented message type would misrepresent what's actually
+    connected, so this module deliberately leaves them untouched.
+  - `create_ros2_node()` is the one place `rclpy` is imported, lazily
+    (not declared as a pip extra - ROS 2 is normally a full distribution
+    install, not a standalone PyPI package); `std_srvs`/`std_msgs` are
+    each imported lazily at their own real call site, degrading to a
+    clear, reported failure rather than a bare `ImportError` when ROS 2
+    isn't installed.
+- 3 new regression tests proving the real, honest degradation path on a
+  host without ROS 2 (this dev environment genuinely has none installed) -
+  13/13 tests passing.
+
 ## [0.0.3] - Real transient_local QoS for the state topic
 
 - Versioned the plan-only ROS 2 interface evidence: the coordinator now

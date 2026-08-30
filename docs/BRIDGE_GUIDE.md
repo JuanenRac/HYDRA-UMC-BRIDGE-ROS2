@@ -10,7 +10,9 @@ GPL-3.0-or-later - see LICENSE
 
 This bridge maps a validated `BridgeJob` to a **static ROS 2 interface plan**. The current core has no `rclpy`, DDS or ROS graph dependency, so it can be verified on Windows, Linux or CI without a robot. `Ros2Coordinator` emits only a plan: state topic `/hydra_umc/machine_state`, inspect service `/hydra_umc/inspect_cell`, job action `/hydra_umc/execute_cell_job` and safe-stop service `/hydra_umc/request_safe_stop`.
 
-`PREPARE`, `LOAD`, `PROCESS`, `UNLOAD` and `COMPLETE` map to the job action; `ABORT` maps to the safe-stop service. An unknown SDK phase is rejected. The result is always `plan-only`, never a ROS message, motion command or node startup.
+`PREPARE`, `LOAD`, `PROCESS`, `UNLOAD` and `COMPLETE` map to the job action; `ABORT` maps to the safe-stop service. An unknown SDK phase is rejected. `Ros2Coordinator.dispatch()` itself is always `plan-only`, never a ROS message, motion command or node startup - only `rclpy_transport.py`, given an already-gated dispatch explicitly, ever touches a real ROS 2 graph.
+
+`rclpy_transport.py` is this bridge's first real transport, deliberately partial: `Ros2SafeStopClient` calls the real `safe_stop_service` via a real `std_srvs/Trigger` client; `Ros2StateSubscriber` subscribes to the real `state_topic` via a real `std_msgs/String` subscription using the `transient_local` durability QoS above. `inspect_service`/`job_action` have no real standard ROS 2 message type - building a client for them needs this repository to define its own `.srv`/`.action` package first, which this module deliberately does not invent. `create_ros2_node()` is the one place `rclpy` is imported, lazily; `std_srvs`/`std_msgs` are each imported lazily at their own real call site.
 
 ## Versioned interface-plan evidence
 
