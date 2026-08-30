@@ -6,6 +6,13 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## Unreleased
+
+- Versioned the plan-only ROS 2 interface evidence: the coordinator now
+  validates serialized schema `1.0` plans, `interface-plan-v1.json` records
+  the stable endpoint contract, and build-test verifies the fixture against
+  live coordinator output without importing `rclpy` or contacting DDS.
+
 ## [0.0.2] - 2026-08-30
 
 - Added `docs/BRIDGE_GUIDE.md`, defining the plan-only ROS 2 boundary,

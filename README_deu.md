@@ -70,7 +70,8 @@ HYDRA-UMC-BRIDGE-ROS2/
 │       ├── __init__.py
 │       └── coordinator.py       # Ros2Coordinator: abhängigkeitsfreies Topic-/Service-/Action-Gatter
 ├── tests/
-│   └── test_coordinator.py      # Deterministische Unit-Tests für den Koordinationskern
+│   ├── test_coordinator.py      # Deterministische Unit-Tests für den Koordinationskern
+│   └── fixtures/interface-plan-v1.json # Veröffentlichtes Schema-1.0-Interface-Kompatibilitätsfixture
 ├── tools/
 │   ├── build_test.py            # Nicht-mutierender Compiler + Testläufer (build-test.bat/.sh)
 │   └── bump_version.py          # Synchronisiert pyproject.toml, Manifest und CHANGELOG.md

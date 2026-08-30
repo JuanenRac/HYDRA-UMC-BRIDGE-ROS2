@@ -12,6 +12,20 @@ This bridge maps a validated `BridgeJob` to a **static ROS 2 interface plan**. T
 
 `PREPARE`, `LOAD`, `PROCESS`, `UNLOAD` and `COMPLETE` map to the job action; `ABORT` maps to the safe-stop service. An unknown SDK phase is rejected. The result is always `plan-only`, never a ROS message, motion command or node startup.
 
+## Versioned interface-plan evidence
+
+`tests/fixtures/interface-plan-v1.json` is the published compatibility
+fixture for schema `1.0`. It records all four reserved names, their
+`/hydra_umc/` namespace and the mandatory `plan-only` mode. The coordinator
+validates a serialized plan before accepting it, and
+`inspect_interface_plan.py --verify-fixture` compares the live static plan
+against the fixture. Therefore a renamed endpoint, missing field, namespace
+escape or unannounced schema change fails deterministic local validation.
+
+To introduce an incompatible interface, publish a new schema version and a
+new fixture deliberately; do not silently edit the v1 fixture. This evidence
+does not create a ROS graph or prove any DDS/QoS behavior.
+
 ## Compatible software
 
 The planned northbound/southbound boundary is for ROS 2 distributions and applications that provide their own documented topics, services or actions: Nav2-based mobile robots, MoveIt-capable manipulators, simulation systems such as Gazebo, and custom ROS 2 nodes. Compatibility means adapting their public ROS 2 interfaces through a separately deployed adapter after an interface contract is selected; it does **not** mean that this repository controls them today.

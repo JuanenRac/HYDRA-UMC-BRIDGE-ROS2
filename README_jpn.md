@@ -70,7 +70,8 @@ HYDRA-UMC-BRIDGE-ROS2/
 │       ├── __init__.py
 │       └── coordinator.py       # Ros2Coordinator: 依存関係なしのtopic/service/actionゲート
 ├── tests/
-│   └── test_coordinator.py      # 連携コアの決定論的ユニットテスト
+│   ├── test_coordinator.py      # 連携コアの決定論的ユニットテスト
+│   └── fixtures/interface-plan-v1.json # 公開 schema-1.0 インターフェース互換性フィクスチャ
 ├── tools/
 │   ├── build_test.py            # 非破壊的なコンパイル+テストランナー (build-test.bat/.sh)
 │   └── bump_version.py          # pyproject.toml、マニフェスト、CHANGELOG.md を同期

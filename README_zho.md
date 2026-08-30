@@ -70,7 +70,8 @@ HYDRA-UMC-BRIDGE-ROS2/
 │       ├── __init__.py
 │       └── coordinator.py       # Ros2Coordinator: 无依赖的 topic/service/action 门控
 ├── tests/
-│   └── test_coordinator.py      # 协调核心的确定性单元测试
+│   ├── test_coordinator.py      # 协调核心的确定性单元测试
+│   └── fixtures/interface-plan-v1.json # 已发布的 schema-1.0 接口兼容性 fixture
 ├── tools/
 │   ├── build_test.py            # 非变更式编译 + 测试运行器 (build-test.bat/.sh)
 │   └── bump_version.py          # 同步 pyproject.toml、清单和 CHANGELOG.md

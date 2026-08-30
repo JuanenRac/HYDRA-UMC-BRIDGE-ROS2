@@ -22,4 +22,5 @@ for source_root in (ROOT / "src", ROOT / "tools"):
     for source in source_root.rglob("*.py"):
         py_compile.compile(str(source), doraise=True)
 subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"], cwd=ROOT, env=os.environ.copy(), check=True)
+subprocess.run([sys.executable, "tools/inspect_interface_plan.py", "--verify-fixture"], cwd=ROOT, env=os.environ.copy(), check=True)
 print("BUILD_TEST=PASS versioning=unchanged changelog=unchanged")

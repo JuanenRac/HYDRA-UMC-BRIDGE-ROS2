@@ -4,9 +4,11 @@
 # GPL-3.0-or-later - see LICENSE
 # =============================================================================
 
+import json
 import unittest
+from pathlib import Path
 
-from hydra_umc_bridge_ros2 import BridgeJob, CellState, JobPhase, MachineState, Ros2Coordinator
+from hydra_umc_bridge_ros2 import BridgeJob, CellState, JobPhase, MachineState, Ros2Coordinator, Ros2InterfacePlan
 
 
 def job(phase=JobPhase.PROCESS, state=MachineState.IDLE):
@@ -42,6 +44,22 @@ class CoordinatorTests(unittest.TestCase):
         self.assertEqual(plan["mode"], "plan-only")
         self.assertEqual(plan["job_action"], "/hydra_umc/execute_cell_job")
         self.assertEqual(plan["safe_stop_service"], "/hydra_umc/request_safe_stop")
+
+    def test_interface_plan_matches_the_published_v1_compatibility_fixture(self):
+        fixture = Path(__file__).parent / "fixtures" / "interface-plan-v1.json"
+        expected = json.loads(fixture.read_text(encoding="utf-8"))
+        parsed = Ros2InterfacePlan.from_dict(expected)
+        self.assertEqual(parsed.to_dict(), self.coordinator.interface_plan().to_dict())
+
+    def test_interface_plan_rejects_schema_or_namespace_drift(self):
+        plan = self.coordinator.interface_plan().to_dict()
+        plan["schema_version"] = "2.0"
+        with self.assertRaises(ValueError):
+            Ros2InterfacePlan.from_dict(plan)
+        plan["schema_version"] = "1.0"
+        plan["job_action"] = "/unowned/execute"
+        with self.assertRaises(ValueError):
+            Ros2InterfacePlan.from_dict(plan)
 
 
 if __name__ == "__main__":

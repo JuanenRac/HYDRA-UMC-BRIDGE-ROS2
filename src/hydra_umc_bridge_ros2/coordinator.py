@@ -12,6 +12,7 @@ host and becomes a ROS 2 node only through a separately deployed adapter.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Mapping
 
 from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, MachineState, evaluate_job
 
@@ -46,6 +47,39 @@ class Ros2InterfacePlan:
             "job_action": self.job_action,
             "safe_stop_service": self.safe_stop_service,
         }
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, object]) -> "Ros2InterfacePlan":
+        """Validate a serialized interface-plan contract before using it.
+
+        The v1 plan is deliberately a small JSON-compatible object so a future
+        rclpy adapter can consume the same evidence. Unknown or missing fields
+        are rejected rather than silently becoming a different interface.
+        """
+
+        expected = {
+            "schema_version",
+            "mode",
+            "state_topic",
+            "inspect_service",
+            "job_action",
+            "safe_stop_service",
+        }
+        if set(payload) != expected:
+            raise ValueError("ROS 2 interface plan fields do not match schema 1.0")
+        values = {name: payload[name] for name in expected}
+        if not all(isinstance(value, str) and value for value in values.values()):
+            raise ValueError("ROS 2 interface plan values must be non-empty strings")
+        if values["schema_version"] != "1.0":
+            raise ValueError(f"unsupported ROS 2 interface plan schema: {values['schema_version']}")
+        if values["mode"] != "plan-only":
+            raise ValueError("ROS 2 interface plan must remain plan-only")
+        for name in ("state_topic", "inspect_service", "job_action", "safe_stop_service"):
+            if not values[name].startswith("/hydra_umc/"):
+                raise ValueError(f"ROS 2 interface {name} must stay in the /hydra_umc namespace")
+        if len({values[name] for name in expected - {"schema_version", "mode"}}) != 4:
+            raise ValueError("ROS 2 interface names must remain distinct")
+        return cls(**values)  # type: ignore[arg-type]
 
 
 class Ros2Coordinator:

@@ -70,7 +70,8 @@ HYDRA-UMC-BRIDGE-ROS2/
 │       ├── __init__.py
 │       └── coordinator.py       # Ros2Coordinator: puerta topic/service/action sin dependencias
 ├── tests/
-│   └── test_coordinator.py      # Pruebas unitarias deterministas del núcleo de coordinación
+│   ├── test_coordinator.py      # Pruebas unitarias deterministas del núcleo de coordinación
+│   └── fixtures/interface-plan-v1.json # Fixture publicada de compatibilidad de interfaz schema-1.0
 ├── tools/
 │   ├── build_test.py            # Compilador + ejecutor de pruebas no mutante (build-test.bat/.sh)
 │   └── bump_version.py          # Sincroniza pyproject.toml, manifiesto y CHANGELOG.md
