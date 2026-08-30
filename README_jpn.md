@@ -147,14 +147,3 @@ bash build.sh
 
 ## 📜 ライセンス
 GPL-3.0 - 詳細はLICENSEを参照。
-
-## 🛠️ ビルドと実行
-
-リリースビルド前に、バージョンを変更しないビルドチェックを使用する:
-
-| 操作 | Windows | Linux / macOS |
-|---|---|---|
-| ビルドチェック(バージョンやCHANGELOGの変更なし) | `build-test.bat` | `./build-test.sh` |
-| 実行 / 開発(提供されている場合) | `run*.bat` または `dev*.bat` | `./run*.sh` または `./dev*.sh` |
-
-`build-test.bat` と `build-test.sh` は、`hydra-umc.project.json` を更新せず `CHANGELOG.md` も変更せずに、プロジェクトのスタックをコンパイルまたは検証する。生成するのは通常のコンパイラ出力のみである。既存の `build*.bat`、`build*.sh`、`run*`、`dev*` スクリプトは、それぞれプロジェクト固有・バージョン管理・実行時の挙動を保持する。その挙動が必要な場合はそれらを使用すること。

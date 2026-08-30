@@ -8,6 +8,9 @@ GPL-3.0-or-later - see LICENSE
 
 ## [0.0.2] - 2026-08-30
 
+- Added `docs/BRIDGE_GUIDE.md`, defining the plan-only ROS 2 boundary,
+  compatible ROS 2 software scope, script conventions and HIL acceptance gate.
+- Removed the duplicated terminal BUILD & RUN section from all seven README files.
 - Made ROS 2 phase routing fail closed: an SDK phase with no explicitly
   planned route is denied rather than sent to the generic work action.
 - Reserved `/hydra_umc/request_safe_stop` for the planned `ABORT` path and

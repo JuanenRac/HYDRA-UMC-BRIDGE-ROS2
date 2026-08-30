@@ -9,3 +9,8 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+
+# Local secrets: retain only the documented template.
+.env
+.env.*
+!.env.example

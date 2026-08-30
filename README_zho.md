@@ -147,14 +147,3 @@ bash build.sh
 
 ## 📜 许可证
 GPL-3.0 - 详见 LICENSE。
-
-## 🛠️ 构建与运行
-
-在发布构建之前,使用不带版本递增的构建检查:
-
-| 操作 | Windows | Linux / macOS |
-|---|---|---|
-| 构建检查(不改变版本或 CHANGELOG) | `build-test.bat` | `./build-test.sh` |
-| 运行 / 开发(如提供) | `run*.bat` 或 `dev*.bat` | `./run*.sh` 或 `./dev*.sh` |
-
-`build-test.bat` 和 `build-test.sh` 会编译或验证项目技术栈,但不会递增 `hydra-umc.project.json` 或修改 `CHANGELOG.md`。它们只能产生正常的编译器输出。现有的 `build*.bat`、`build*.sh`、`run*` 和 `dev*` 脚本保留各自项目特定的、带版本管理或运行时行为;在需要这些行为时使用它们。
