@@ -14,17 +14,27 @@ This bridge maps a validated `BridgeJob` to a **static ROS 2 interface plan**. T
 
 ## Versioned interface-plan evidence
 
-`tests/fixtures/interface-plan-v1.json` is the published compatibility
-fixture for schema `1.0`. It records all four reserved names, their
-`/hydra_umc/` namespace and the mandatory `plan-only` mode. The coordinator
-validates a serialized plan before accepting it, and
+`tests/fixtures/interface-plan-v1.1.json` is the published compatibility
+fixture for schema `1.1`. It records all four reserved names, their
+`/hydra_umc/` namespace, the mandatory `plan-only` mode, and the real ROS 2
+durability QoS policy (`state_topic_durability`) `state_topic` needs:
+`transient_local`, ROS 2's own replacement for ROS 1's latched publisher, so
+a late-joining subscriber (a monitor, a logger, an operator's session) sees
+the current machine state immediately instead of only future changes. The
+coordinator validates a serialized plan before accepting it, and
 `inspect_interface_plan.py --verify-fixture` compares the live static plan
 against the fixture. Therefore a renamed endpoint, missing field, namespace
-escape or unannounced schema change fails deterministic local validation.
+escape, unreal QoS value or unannounced schema change fails deterministic
+local validation. The now-superseded schema `1.0` fixture
+(`tests/fixtures/interface-plan-v1.json`, no QoS field) is kept only to
+prove a `1.1`-only parser correctly rejects it.
 
 To introduce an incompatible interface, publish a new schema version and a
-new fixture deliberately; do not silently edit the v1 fixture. This evidence
-does not create a ROS graph or prove any DDS/QoS behavior.
+new fixture deliberately; do not silently edit the v1.1 fixture. This
+evidence does not create a ROS graph; declaring `transient_local` here
+documents the QoS a future rclpy adapter must set on both the publisher and
+the subscriber side (ROS 2, unlike ROS 1, requires both to declare it) - it
+does not itself prove any live DDS/QoS behavior.
 
 ## Compatible software
 

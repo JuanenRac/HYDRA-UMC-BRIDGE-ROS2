@@ -40,24 +40,55 @@ class CoordinatorTests(unittest.TestCase):
 
     def test_interface_plan_is_static_and_explicitly_not_a_runtime(self):
         plan = self.coordinator.interface_plan().to_dict()
-        self.assertEqual(plan["schema_version"], "1.0")
+        self.assertEqual(plan["schema_version"], "1.1")
         self.assertEqual(plan["mode"], "plan-only")
         self.assertEqual(plan["job_action"], "/hydra_umc/execute_cell_job")
         self.assertEqual(plan["safe_stop_service"], "/hydra_umc/request_safe_stop")
 
-    def test_interface_plan_matches_the_published_v1_compatibility_fixture(self):
-        fixture = Path(__file__).parent / "fixtures" / "interface-plan-v1.json"
+    def test_interface_plan_declares_transient_local_durability_for_the_state_topic(self):
+        # Researched against ROS 2's own real QoS defaults (design.ros2.org/
+        # articles/qos.html): "volatile" is the real default and drops the
+        # last sample for any subscriber that joins after the last publish.
+        # A machine-state topic needs "transient_local" (ROS 2's real
+        # equivalent of ROS 1's latched publisher) so a late-joining
+        # monitor sees the current state immediately, not just future
+        # changes.
+        plan = self.coordinator.interface_plan()
+        self.assertEqual(plan.state_topic_durability, "transient_local")
+
+    def test_interface_plan_matches_the_published_v1_1_compatibility_fixture(self):
+        fixture = Path(__file__).parent / "fixtures" / "interface-plan-v1.1.json"
         expected = json.loads(fixture.read_text(encoding="utf-8"))
         parsed = Ros2InterfacePlan.from_dict(expected)
         self.assertEqual(parsed.to_dict(), self.coordinator.interface_plan().to_dict())
+
+    def test_interface_plan_rejects_the_superseded_v1_0_fixture(self):
+        # The real v1.0 contract (no QoS field at all) is a genuinely
+        # different, now-superseded schema - a v1.1-only parser must fail
+        # closed on it rather than silently accepting a plan with no
+        # durability guarantee for the state topic.
+        fixture = Path(__file__).parent / "fixtures" / "interface-plan-v1.json"
+        expected = json.loads(fixture.read_text(encoding="utf-8"))
+        with self.assertRaises(ValueError):
+            Ros2InterfacePlan.from_dict(expected)
 
     def test_interface_plan_rejects_schema_or_namespace_drift(self):
         plan = self.coordinator.interface_plan().to_dict()
         plan["schema_version"] = "2.0"
         with self.assertRaises(ValueError):
             Ros2InterfacePlan.from_dict(plan)
-        plan["schema_version"] = "1.0"
+        plan["schema_version"] = "1.1"
         plan["job_action"] = "/unowned/execute"
+        with self.assertRaises(ValueError):
+            Ros2InterfacePlan.from_dict(plan)
+
+    def test_interface_plan_rejects_an_unreal_durability_value(self):
+        # "transient_local" and "volatile" are ROS 2's real, closed set of
+        # durability QoS policy values - anything else is a typo, not a
+        # real ROS 2 concept, and must fail before it reaches a future
+        # rclpy adapter.
+        plan = self.coordinator.interface_plan().to_dict()
+        plan["state_topic_durability"] = "latched"
         with self.assertRaises(ValueError):
             Ros2InterfacePlan.from_dict(plan)
 

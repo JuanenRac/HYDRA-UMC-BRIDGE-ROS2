@@ -26,16 +26,16 @@ def main() -> int:
     """Serialize the static, non-runtime interface plan."""
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--verify-fixture", action="store_true", help="verify the published v1 fixture")
+    parser.add_argument("--verify-fixture", action="store_true", help="verify the published v1.1 fixture")
     args = parser.parse_args()
     plan = Ros2Coordinator().interface_plan().to_dict()
     if args.verify_fixture:
-        fixture = ROOT / "tests" / "fixtures" / "interface-plan-v1.json"
+        fixture = ROOT / "tests" / "fixtures" / "interface-plan-v1.1.json"
         expected = json.loads(fixture.read_text(encoding="utf-8"))
         if expected != plan:
             print("ROS2_INTERFACE_PLAN=FAIL fixture differs from coordinator output", file=sys.stderr)
             return 1
-        print("ROS2_INTERFACE_PLAN=PASS schema=1.0 fixture=interface-plan-v1.json")
+        print("ROS2_INTERFACE_PLAN=PASS schema=1.1 fixture=interface-plan-v1.1.json")
         return 0
     print(json.dumps(plan, sort_keys=True))
     return 0
