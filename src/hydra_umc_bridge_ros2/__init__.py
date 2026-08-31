@@ -9,6 +9,7 @@
 from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, MachineState
 
 from .coordinator import Ros2Coordinator, Ros2Dispatch, Ros2InterfacePlan
+from .mqtt_transport import MqttPublish, Ros2MqttBridge, bridge_state_to_mqtt, run_forever
 from .rclpy_transport import (
     Ros2SafeStopClient,
     Ros2StateSubscriber,
@@ -30,4 +31,8 @@ __all__ = [
     "SafeStopResult",
     "SubscribeResult",
     "create_ros2_node",
+    "Ros2MqttBridge",
+    "MqttPublish",
+    "bridge_state_to_mqtt",
+    "run_forever",
 ]

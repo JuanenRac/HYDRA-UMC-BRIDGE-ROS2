@@ -6,6 +6,27 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.0.5] - Real MQTT transport over the real broker
+
+- **`mqtt_transport.py`** (new) - reaches this bridge's already-real logic
+  (`Ros2Coordinator.dispatch`, `Ros2SafeStopClient.call`,
+  `Ros2StateSubscriber`) over `HYDRA-UMC-MQTT-BROKER`, per the
+  ecosystem's own "MQTT via the real broker, real commands included"
+  decision - `hydra/bridges/ros2/cmd/{job,safe_stop}` in,
+  `hydra/bridges/ros2/state` (retained, republished from the real ROS 2
+  `state_topic`) and `.../cmd/<verb>/result` out. `bridge_state_to_mqtt()`
+  is the real, intended use of `Ros2StateSubscriber`'s own `on_state`
+  callback hook - this module IS the "separately deployed adapter"
+  `rclpy_transport.py`'s own docstring already anticipated.
+  `Ros2MqttBridge.handle_message()` is a pure(ish) topic dispatcher;
+  `cmd/job` never touches rclpy and is fully testable, `cmd/safe_stop`
+  degrades the same honest way `rclpy_transport.py`'s own tests already
+  document on a host without a real ROS 2 install. `inspect_service`/
+  `job_action` stay untouched, same reason as always: no real message/
+  action type exists for them yet. `run_forever()` is the thin real-I/O
+  glue, lazily importing the new optional `paho-mqtt` dependency (a
+  standalone PyPI package, unlike rclpy). 10 new tests.
+
 ## [0.0.4] - Real, partial rclpy transport (pre-real: connected where honest, not simulated)
 
 - **`rclpy_transport.py`** (new) - this bridge's first real transport, for
