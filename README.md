@@ -124,6 +124,7 @@ This project is part of a larger robotics ecosystem by the same author (JuanenRa
 
 - **[HYDRA-UMC-SDK](https://github.com/JuanenRac/HYDRA-UMC-SDK)** — the shared job-and-safety contract every bridge (including this one) evaluates jobs through.
 - **[HYDRA-UMC-SERVER](https://github.com/JuanenRac/HYDRA-UMC-SERVER)** — the authenticated ecosystem boundary this bridge reports to.
+- **[HYDRA-UMC-MQTT-BROKER](https://github.com/JuanenRac/HYDRA-UMC-MQTT-BROKER)** — `mqtt_transport.py`'s real transport for this bridge's own `hydra/bridges/ros2/...` topics (the plan-only job gate, a real `std_srvs/Trigger` safe-stop call, and the real ROS 2 state topic republished as the "separately deployed adapter" `rclpy_transport.py` always anticipated) - see that repo's own `docs/BRIDGE_TOPICS.md`.
 - **[HYDRA-UMC-HIL-BRIDGE](https://github.com/JuanenRac/HYDRA-UMC-HIL-BRIDGE)** — hardware-in-the-loop evidence path for a real ROS 2 deployment.
 
 ### Rest of the Ecosystem
