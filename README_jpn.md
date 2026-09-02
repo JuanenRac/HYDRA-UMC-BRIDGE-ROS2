@@ -32,9 +32,10 @@ GPL-3.0-or-later - see LICENSE
 * ✅ **実在する依存関係なしの連携コア:** `coordinator.py` の `Ros2Coordinator` には `rclpy` のインポートが一切ない —— 意図的に純粋なPythonであり、ROS 2のインストールなしにどのホストでもテスト可能である。*(実装済み、`tests/test_coordinator.py` でテスト済み)*
 * ✅ **実在する3方向インターフェースマッピング:** 3つの固定クラス属性が、それぞれの目的に対して正確なROS 2インターフェース種別を予約する —— `/hydra_umc/machine_state`(topic、継続的な状態)、`/hydra_umc/inspect_cell`(service、短時間の検査)、`/hydra_umc/execute_cell_job`(action、キャンセル可能なジョブ)。*(実装済み)*
 * ✅ **実在する共有安全ゲート:** `Ros2Coordinator.dispatch()` を通じて送信されるすべてのジョブは、`HYDRA-UMC-SDK` の `bridge_contract` にある `evaluate_job()` によって評価される。これは他のすべての兄弟ブリッジとHYDRA-UMC-SERVERが使うのと同じゲートである。実際のフェーズには外部機械が `IDLE` であり、HYDRA-UMCセルが `READY` であることが必要だが、`ABORT` は故障中でも要求可能である。*(実装済み)*
-* ✅ **フェイルクローズのフェーズルーティングと静的エビデンス:** 生産フェーズは計画済みのジョブアクションにのみマッピングされ、`ABORT` は `/hydra_umc/request_safe_stop` にマッピングされる。未知の将来SDKフェーズは拒否される。`inspect_interface_plan.py` は `rclpy` のインポートやDDSへの接続なしに静的スキーマ `1.0` プランを出力する。*(実装・テスト済み)*
+* ✅ **フェイルクローズのフェーズルーティングと静的エビデンス:** 生産フェーズは計画済みのジョブアクションにのみマッピングされ、`ABORT` は `/hydra_umc/request_safe_stop` にマッピングされる。未知の将来SDKフェーズは拒否される。`inspect_interface_plan.py` は、状態トピックが必要とする実際の `transient_local` durability QoS(ROS 1のlatchedパブリッシャーに代わるROS 2独自の仕組みで、design.ros2.org/articles/qos.html を参照して調査済み)を含む、静的スキーマ `1.1` のプランを、`rclpy` のインポートやDDSへの接続なしに出力する。*(実装・テスト済み)*
+* ✅ **実在する部分的な `rclpy` トランスポート:** `rclpy_transport.py` は、今日すでに実際の標準ROS 2メッセージ型で2つのインターフェースを接続する —— `Ros2SafeStopClient`(実際の `std_srvs/Trigger` クライアント)と `Ros2StateSubscriber`(実際の `transient_local` durability QoSを使用する、実際の `std_msgs/String` サブスクライバー)。*(実装済み、`tests/test_rclpy_transport.py` でテスト済み)*
 * ✅ **非破壊的なビルド/テスト:** `build-test.bat`/`.sh` はソースをコンパイルし、バージョンやCHANGELOGを変更せずに決定論的なユニットテストを実行する。*(実装済み、下記「ビルドと実行」を参照)*
-* 🔜 **`rclpy` アダプターとROS `.msg`/`.srv`/`.action` 契約** —— 実際のROS 2環境が選定・テストされた後にのみ導入される。*(計画中)*
+* 🔜 **`inspect_service`/`job_action` 用のカスタム `.srv`/`.action` 契約** —— これらには実在する標準ROS 2メッセージ型が存在しないため、そのためのクライアントには、まずこのリポジトリが独自のインターフェースパッケージを定義する必要がある。*(計画中)*
 
 ---
 
@@ -123,6 +124,7 @@ bash build.sh
 
 - **[HYDRA-UMC-SDK](https://github.com/JuanenRac/HYDRA-UMC-SDK)** —— このブリッジ(および他のすべてのブリッジ)がジョブを評価する共有のジョブ・安全契約。
 - **[HYDRA-UMC-SERVER](https://github.com/JuanenRac/HYDRA-UMC-SERVER)** —— このブリッジが報告する認証済みエコシステム境界。
+- **[HYDRA-UMC-MQTT-BROKER](https://github.com/JuanenRac/HYDRA-UMC-MQTT-BROKER)** —— このブリッジ自身の `hydra/bridges/ros2/...` トピック向けの `mqtt_transport.py` の実際のトランスポート(プランのみのジョブゲート、実際の `std_srvs/Trigger` セーフストップ呼び出し、そして `rclpy_transport.py` が常に想定していた「別途デプロイされるアダプター」として再公開される実際のROS 2状態トピック)—— 詳細はそのリポジトリ自身の `docs/BRIDGE_TOPICS.md` を参照。
 - **[HYDRA-UMC-HIL-BRIDGE](https://github.com/JuanenRac/HYDRA-UMC-HIL-BRIDGE)** —— 実際のROS 2デプロイメントに向けたハードウェア・イン・ザ・ループ実証パス。
 
 ### エコシステムのその他
