@@ -108,7 +108,7 @@ bash build.sh
 
 ## ✅ AKTUELLER STATUS UND NÄCHSTE SCHRITTE
 
-**Heute real:** Version `0.0.2`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`Ros2Coordinator`) mit fünf deterministischen lokalen Sicherheitstests, ausfallsicherem Phasenrouting, einem statischen `plan-only`-Schnittstellenschema sowie nicht-mutierenden Build-Test-Skripten, die in CI mit SDK-Checkout eingebunden sind.
+**Heute real:** Version `0.0.5`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`Ros2Coordinator`) mit zehn deterministischen lokalen Sicherheitstests, ausfallsicherem Phasenrouting, einem statischen `plan-only`-Schnittstellenschema, das die echte `transient_local`-Durability-QoS deklariert, die das Zustands-Topic benötigt, einem echten (lazy importierten) `rclpy`-Transport für die 2 Schnittstellen mit einem echten, standardmäßigen ROS-2-Nachrichtentyp, sowie nicht-mutierenden Build-Test-Skripten, die in CI mit SDK-Checkout eingebunden sind.
 
 **Integrationsgrenze:** diese Brücke ist ausschließlich eine Koordinationsgrenze — sie ist kein Motorsteuerungsknoten und kann HYDRA-UMC-SERVER, MCU-Grenzen, Watchdogs oder den E-STOP nicht umgehen; jeder versendete Auftrag durchläuft weiterhin dasselbe gemeinsame Gatter, das jede Schwesterbrücke verwendet.
 

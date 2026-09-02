@@ -108,7 +108,7 @@ bash build.sh
 
 ## ✅ ESTADO ACTUAL Y PRÓXIMOS PASOS
 
-**Real hoy:** versión `0.0.2`, funcional como núcleo de coordinación sin dependencias (`Ros2Coordinator`) con cinco pruebas locales deterministas de seguridad, enrutado de fases cerrado, un esquema de interfaz estático `plan-only` y scripts build-test no mutantes conectados a CI con un checkout del SDK.
+**Real hoy:** versión `0.0.5`, funcional como núcleo de coordinación sin dependencias (`Ros2Coordinator`) con diez pruebas locales deterministas de seguridad, enrutado de fases cerrado, un esquema de interfaz estático `plan-only` que declara la calidad de servicio (QoS) de durabilidad `transient_local` real que necesita el topic de estado, un transporte `rclpy` real (importado de forma perezosa) para las 2 interfaces con un tipo de mensaje ROS 2 estándar real, y scripts build-test no mutantes conectados a CI con un checkout del SDK.
 
 **Frontera de integración:** este puente es únicamente una frontera de coordinación — no es un nodo de control de motores, y no puede eludir HYDRA-UMC-SERVER, los límites de MCU, los watchdogs ni el E-STOP; cada trabajo despachado sigue pasando por la misma puerta compartida que usan todos los puentes hermanos.
 
