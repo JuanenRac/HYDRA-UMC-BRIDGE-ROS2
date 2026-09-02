@@ -69,13 +69,23 @@ HYDRA-UMC-BRIDGE-ROS2/
 ├── src/
 │   └── hydra_umc_bridge_ros2/
 │       ├── __init__.py
-│       └── coordinator.py       # Ros2Coordinator: dependency-free topic/service/action gate
+│       ├── coordinator.py       # Ros2Coordinator: dependency-free topic/service/action gate
+│       ├── rclpy_transport.py   # Real rclpy transport - only the 2 interfaces with a real, standard ROS 2 message type
+│       └── mqtt_transport.py    # Real MQTT broker transport for this bridge's own already-real logic
 ├── tests/
 │   ├── test_coordinator.py      # Deterministic unit tests for the coordination core
-│   └── fixtures/interface-plan-v1.1.json # Published schema-1.1 interface compatibility fixture
+│   ├── test_rclpy_transport.py  # Real rclpy transport tests against a fake node/publisher
+│   ├── test_mqtt_transport.py   # MQTT command/status shape tests against a fake broker client
+│   └── fixtures/
+│       ├── interface-plan-v1.json    # Schema-1.0 interface compatibility fixture
+│       └── interface-plan-v1.1.json  # Published schema-1.1 interface compatibility fixture
 ├── tools/
 │   ├── build_test.py            # Non-mutating compile + test runner (build-test.bat/.sh)
 │   └── bump_version.py          # Synchronizes pyproject.toml, manifest and CHANGELOG.md
+├── docs/
+│   └── BRIDGE_GUIDE.md          # Scope, compatible platforms, scripts, hardware acceptance gate
+├── images/
+│   └── HYDRA_UMC_BANNER.svg     # README banner
 ├── build-test.bat / build-test.sh  # Validate only, never modifies the repository
 ├── build.bat / build.sh            # Validate, then bump version + CHANGELOG on success
 ├── pyproject.toml               # Package metadata; depends on HYDRA-UMC-SDK (git)

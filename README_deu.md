@@ -69,13 +69,23 @@ HYDRA-UMC-BRIDGE-ROS2/
 ├── src/
 │   └── hydra_umc_bridge_ros2/
 │       ├── __init__.py
-│       └── coordinator.py       # Ros2Coordinator: abhängigkeitsfreies Topic-/Service-/Action-Gatter
+│       ├── coordinator.py       # Ros2Coordinator: abhängigkeitsfreies Topic-/Service-/Action-Gatter
+│       ├── rclpy_transport.py   # Echter rclpy-Transport - nur die 2 Interfaces mit echtem, standardisiertem ROS-2-Nachrichtentyp
+│       └── mqtt_transport.py    # Echter MQTT-Broker-Transport für die bereits reale Logik dieser Bridge
 ├── tests/
 │   ├── test_coordinator.py      # Deterministische Unit-Tests für den Koordinationskern
-│   └── fixtures/interface-plan-v1.json # Veröffentlichtes Schema-1.0-Interface-Kompatibilitätsfixture
+│   ├── test_rclpy_transport.py  # Echte rclpy-Transport-Tests gegen einen simulierten Node/Publisher
+│   ├── test_mqtt_transport.py   # MQTT-Befehls-/Statusform-Tests gegen einen simulierten Broker-Client
+│   └── fixtures/
+│       ├── interface-plan-v1.json    # Schema-1.0-Interface-Kompatibilitätsfixture
+│       └── interface-plan-v1.1.json  # Veröffentlichtes Schema-1.1-Interface-Kompatibilitätsfixture
 ├── tools/
 │   ├── build_test.py            # Nicht-mutierender Compiler + Testläufer (build-test.bat/.sh)
 │   └── bump_version.py          # Synchronisiert pyproject.toml, Manifest und CHANGELOG.md
+├── docs/
+│   └── BRIDGE_GUIDE.md          # Umfang, kompatible Plattformen, Skripte, Hardware-Abnahmegatter
+├── images/
+│   └── HYDRA_UMC_BANNER.svg     # README-Banner
 ├── build-test.bat / build-test.sh  # Validiert nur, ändert das Repository nie
 ├── build.bat / build.sh            # Validiert und erhöht bei Erfolg Version + CHANGELOG
 ├── pyproject.toml               # Paket-Metadaten; hängt von HYDRA-UMC-SDK ab (git)

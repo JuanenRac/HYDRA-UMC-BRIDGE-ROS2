@@ -69,13 +69,23 @@ HYDRA-UMC-BRIDGE-ROS2/
 ├── src/
 │   └── hydra_umc_bridge_ros2/
 │       ├── __init__.py
-│       └── coordinator.py       # Ros2Coordinator: 无依赖的 topic/service/action 门控
+│       ├── coordinator.py       # Ros2Coordinator: 无依赖的 topic/service/action 门控
+│       ├── rclpy_transport.py   # 真实的 rclpy 传输 - 仅限拥有真实标准 ROS 2 消息类型的 2 个接口
+│       └── mqtt_transport.py    # 面向此 bridge 已有真实逻辑的真实 MQTT broker 传输
 ├── tests/
 │   ├── test_coordinator.py      # 协调核心的确定性单元测试
-│   └── fixtures/interface-plan-v1.json # 已发布的 schema-1.0 接口兼容性 fixture
+│   ├── test_rclpy_transport.py  # 针对模拟节点/发布者的真实 rclpy 传输测试
+│   ├── test_mqtt_transport.py   # 针对模拟 broker 客户端的 MQTT 命令/状态格式测试
+│   └── fixtures/
+│       ├── interface-plan-v1.json    # schema-1.0 接口兼容性 fixture
+│       └── interface-plan-v1.1.json  # 已发布的 schema-1.1 接口兼容性 fixture
 ├── tools/
 │   ├── build_test.py            # 非变更式编译 + 测试运行器 (build-test.bat/.sh)
 │   └── bump_version.py          # 同步 pyproject.toml、清单和 CHANGELOG.md
+├── docs/
+│   └── BRIDGE_GUIDE.md          # 范围、兼容平台、脚本、硬件验收门控
+├── images/
+│   └── HYDRA_UMC_BANNER.svg     # README 横幅图
 ├── build-test.bat / build-test.sh  # 仅验证,绝不修改仓库
 ├── build.bat / build.sh            # 先验证,成功后才更新版本 + CHANGELOG
 ├── pyproject.toml               # 包元数据;依赖 HYDRA-UMC-SDK (git)

@@ -69,13 +69,23 @@ HYDRA-UMC-BRIDGE-ROS2/
 ├── src/
 │   └── hydra_umc_bridge_ros2/
 │       ├── __init__.py
-│       └── coordinator.py       # Ros2Coordinator: 依存関係なしのtopic/service/actionゲート
+│       ├── coordinator.py       # Ros2Coordinator: 依存関係なしのtopic/service/actionゲート
+│       ├── rclpy_transport.py   # 実rclpy転送 - 実際の標準ROS 2メッセージ型を持つ2つのインターフェースのみ
+│       └── mqtt_transport.py    # このbridgeの既存の実ロジック向けの実MQTTブローカー転送
 ├── tests/
 │   ├── test_coordinator.py      # 連携コアの決定論的ユニットテスト
-│   └── fixtures/interface-plan-v1.json # 公開 schema-1.0 インターフェース互換性フィクスチャ
+│   ├── test_rclpy_transport.py  # 疑似ノード/パブリッシャーに対する実rclpy転送テスト
+│   ├── test_mqtt_transport.py   # 疑似ブローカークライアントに対するMQTTコマンド/ステータス形状テスト
+│   └── fixtures/
+│       ├── interface-plan-v1.json    # schema-1.0 インターフェース互換性フィクスチャ
+│       └── interface-plan-v1.1.json  # 公開 schema-1.1 インターフェース互換性フィクスチャ
 ├── tools/
 │   ├── build_test.py            # 非破壊的なコンパイル+テストランナー (build-test.bat/.sh)
 │   └── bump_version.py          # pyproject.toml、マニフェスト、CHANGELOG.md を同期
+├── docs/
+│   └── BRIDGE_GUIDE.md          # 適用範囲、対応プラットフォーム、スクリプト、ハードウェア受け入れゲート
+├── images/
+│   └── HYDRA_UMC_BANNER.svg     # README バナー
 ├── build-test.bat / build-test.sh  # 検証のみ、リポジトリを一切変更しない
 ├── build.bat / build.sh            # 検証後、成功時のみバージョン + CHANGELOG を更新
 ├── pyproject.toml               # パッケージメタデータ。HYDRA-UMC-SDK に依存 (git)

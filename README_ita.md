@@ -69,13 +69,23 @@ HYDRA-UMC-BRIDGE-ROS2/
 ├── src/
 │   └── hydra_umc_bridge_ros2/
 │       ├── __init__.py
-│       └── coordinator.py       # Ros2Coordinator: porta topic/service/action priva di dipendenze
+│       ├── coordinator.py       # Ros2Coordinator: porta topic/service/action priva di dipendenze
+│       ├── rclpy_transport.py   # Trasporto rclpy reale - solo le 2 interfacce con un tipo di messaggio ROS 2 reale e standard
+│       └── mqtt_transport.py    # Trasporto MQTT reale del broker per la logica già reale di questo bridge
 ├── tests/
 │   ├── test_coordinator.py      # Test unitari deterministici del nucleo di coordinamento
-│   └── fixtures/interface-plan-v1.json # Fixture pubblica di compatibilità interfaccia schema-1.0
+│   ├── test_rclpy_transport.py  # Test di trasporto rclpy reale contro un nodo/publisher fittizio
+│   ├── test_mqtt_transport.py   # Test di forma comando/stato MQTT contro un client broker fittizio
+│   └── fixtures/
+│       ├── interface-plan-v1.json    # Fixture di compatibilità interfaccia schema-1.0
+│       └── interface-plan-v1.1.json  # Fixture pubblica di compatibilità interfaccia schema-1.1
 ├── tools/
 │   ├── build_test.py            # Compilatore + esecutore di test non mutante (build-test.bat/.sh)
 │   └── bump_version.py          # Sincronizza pyproject.toml, manifesto e CHANGELOG.md
+├── docs/
+│   └── BRIDGE_GUIDE.md          # Ambito, piattaforme compatibili, script, porta di accettazione hardware
+├── images/
+│   └── HYDRA_UMC_BANNER.svg     # Banner del README
 ├── build-test.bat / build-test.sh  # Solo valida, non modifica mai il repository
 ├── build.bat / build.sh            # Valida e, solo in caso di successo, aggiorna versione + CHANGELOG
 ├── pyproject.toml               # Metadati del pacchetto; dipende da HYDRA-UMC-SDK (git)
