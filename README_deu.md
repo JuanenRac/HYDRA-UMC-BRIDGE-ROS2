@@ -81,6 +81,8 @@ HYDRA-UMC-BRIDGE-ROS2/
 │       └── interface-plan-v1.1.json  # Veröffentlichtes Schema-1.1-Interface-Kompatibilitätsfixture
 ├── tools/
 │   ├── build_test.py            # Nicht-mutierender Compiler + Testläufer (build-test.bat/.sh)
+│   ├── inspect_interface_plan.py # Gibt das statische `plan-only`-JSON des Schnittstellenschemas 1.1 aus
+│   ├── ci_validate.py           # Abhängigkeitsfreie, nicht-destruktive CI-Basislinie (verwendet von .github/workflows/ci.yml)
 │   └── bump_version.py          # Synchronisiert pyproject.toml, Manifest und CHANGELOG.md
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Umfang, kompatible Plattformen, Skripte, Hardware-Abnahmegatter
@@ -118,7 +120,7 @@ bash build.sh
 
 ## ✅ AKTUELLER STATUS UND NÄCHSTE SCHRITTE
 
-**Heute real:** Version `0.0.5`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`Ros2Coordinator`) mit zehn deterministischen lokalen Sicherheitstests, ausfallsicherem Phasenrouting, einem statischen `plan-only`-Schnittstellenschema, das die echte `transient_local`-Durability-QoS deklariert, die das Zustands-Topic benötigt, einem echten (lazy importierten) `rclpy`-Transport für die 2 Schnittstellen mit einem echten, standardmäßigen ROS-2-Nachrichtentyp, sowie nicht-mutierenden Build-Test-Skripten, die in CI mit SDK-Checkout eingebunden sind.
+**Heute real:** Version `0.0.5`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`Ros2Coordinator`) mit einer deterministischen `unittest`-Suite mit einundzwanzig Tests, die den Koordinationskern, den MQTT-Transport und den rclpy-Transport abdeckt, ausfallsicherem Phasenrouting, einem statischen `plan-only`-Schnittstellenschema, das die echte `transient_local`-Durability-QoS deklariert, die das Zustands-Topic benötigt, einem echten (lazy importierten) `rclpy`-Transport für die 2 Schnittstellen mit einem echten, standardmäßigen ROS-2-Nachrichtentyp, sowie nicht-mutierenden Build-Test-Skripten, die in CI mit SDK-Checkout eingebunden sind.
 
 **Integrationsgrenze:** diese Brücke ist ausschließlich eine Koordinationsgrenze — sie ist kein Motorsteuerungsknoten und kann HYDRA-UMC-SERVER, MCU-Grenzen, Watchdogs oder den E-STOP nicht umgehen; jeder versendete Auftrag durchläuft weiterhin dasselbe gemeinsame Gatter, das jede Schwesterbrücke verwendet.
 

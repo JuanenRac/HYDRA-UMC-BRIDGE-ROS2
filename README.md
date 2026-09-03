@@ -81,6 +81,8 @@ HYDRA-UMC-BRIDGE-ROS2/
 │       └── interface-plan-v1.1.json  # Published schema-1.1 interface compatibility fixture
 ├── tools/
 │   ├── build_test.py            # Non-mutating compile + test runner (build-test.bat/.sh)
+│   ├── inspect_interface_plan.py # Emits the static, plan-only schema-1.1 interface JSON
+│   ├── ci_validate.py           # Dependency-free, non-destructive CI baseline (used by .github/workflows/ci.yml)
 │   └── bump_version.py          # Synchronizes pyproject.toml, manifest and CHANGELOG.md
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Scope, compatible platforms, scripts, hardware acceptance gate
@@ -118,7 +120,7 @@ bash build.sh
 
 ## ✅ Current Status & Next Steps
 
-**Real today:** version `0.0.5`, functional as a dependency-free coordination core (`Ros2Coordinator`) with ten deterministic local safety tests, fail-closed phase routing, a static `plan-only` interface schema declaring the real `transient_local` durability QoS the state topic needs, a real (lazily-imported) rclpy transport for the 2 interfaces with a real standard ROS 2 message type, and non-mutating build-test scripts wired into CI with an SDK checkout.
+**Real today:** version `0.0.5`, functional as a dependency-free coordination core (`Ros2Coordinator`) with a deterministic twenty-one-test `unittest` suite covering the coordination core, the MQTT transport and the rclpy transport, fail-closed phase routing, a static `plan-only` interface schema declaring the real `transient_local` durability QoS the state topic needs, a real (lazily-imported) rclpy transport for the 2 interfaces with a real standard ROS 2 message type, and non-mutating build-test scripts wired into CI with an SDK checkout.
 
 **Integration boundary:** this bridge is a coordination boundary only — it is not a motor-control node, and it cannot bypass HYDRA-UMC-SERVER, MCU limits, watchdogs or E-STOP; every dispatched job still passes through the same shared gate every sibling bridge uses.
 

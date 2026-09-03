@@ -78,7 +78,7 @@ GPL-3.0-or-later - see LICENSE
 - Schema bumped `1.0` -> `1.1`. 5 new/updated regression tests - 10/10
   tests passing.
 
-## [0.0.2] - 2026-08-30
+## [0.0.2]
 
 - Added `docs/BRIDGE_GUIDE.md`, defining the plan-only ROS 2 boundary,
   compatible ROS 2 software scope, script conventions and HIL acceptance gate.
