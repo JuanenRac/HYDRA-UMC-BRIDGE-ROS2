@@ -1,0 +1,35 @@
+# =============================================================================
+# HYDRA-UMC-BRIDGE-ROS2 - Python package metadata
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+# =============================================================================
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hydra-umc-bridge-ros2"
+version = "0.0.7"
+description = "Fail-safe HYDRA-UMC to ROS 2 coordination boundary"
+requires-python = ">=3.11"
+license = {text = "GPL-3.0-or-later"}
+dependencies = [
+  "hydra-umc-sdk @ git+https://github.com/JuanenRac/HYDRA-UMC-SDK.git@main#subdirectory=clients/python"
+]
+
+# rclpy/std_srvs/std_msgs are NOT declared as a pip extra here (unlike this
+# ecosystem's other lazily-imported transport dependencies) because they are
+# normally provided by a real ROS 2 distribution install (apt/conda), not a
+# standalone PyPI package - rclpy_transport.py's own lazy imports degrade
+# cleanly either way (see its own docstring).
+
+[project.optional-dependencies]
+# Unlike rclpy above, paho-mqtt IS a standalone PyPI package - only
+# run_forever() needs this, it's imported lazily (see mqtt_transport.py's
+# own comment) so the rest of the package, including every topic-dispatch
+# test, works without it installed.
+mqtt = ["paho-mqtt>=2.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

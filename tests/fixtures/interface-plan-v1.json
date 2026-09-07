@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "mode": "plan-only",
+  "state_topic": "/hydra_umc/machine_state",
+  "inspect_service": "/hydra_umc/inspect_cell",
+  "job_action": "/hydra_umc/execute_cell_job",
+  "safe_stop_service": "/hydra_umc/request_safe_stop"
+}
