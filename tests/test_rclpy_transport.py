@@ -149,8 +149,7 @@ def _fake_ros2_modules(spin_effect):
 
 
 class Ros2SafeStopClientRealControlFlowTests(unittest.TestCase):
-    """ROS-01 regression (found in an ecosystem-wide software-improvements
-    audit): exercises the real call_async()/spin_until_future_complete()
+    """ROS-01 regression: exercises the real call_async()/spin_until_future_complete()
     control flow via fake-but-structurally-real ROS 2 modules, proving
     the actual fix rather than just reading rclpy's own documentation."""
 
