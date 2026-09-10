@@ -8,7 +8,7 @@ GPL-3.0-or-later - see LICENSE
 
 ## [0.0.7] - V07-014: the SDK's own real phase-construction rejection reached this bridge's test suite
 
-A second independent revalidation audit found this bridge's own
+A second, closer review found this bridge's own
 `test_unknown_sdk_phase_fails_closed_instead_of_using_the_job_action`
 still constructed a `BridgeJob` directly with a raw `"SOME_FUTURE_PHASE"`
 string - HYDRA-UMC-SDK's own real fix (REV-008) now rejects that AT
@@ -24,8 +24,7 @@ the old construction succeed again.
 
 ## [0.0.6] - ROS-01: real bounded safe-stop response, not just availability
 
-- **ROS-01 (found in an ecosystem-wide software-improvements audit,
-  P1):** `Ros2SafeStopClient.call()` used the synchronous-style
+- **ROS-01 (P1):** `Ros2SafeStopClient.call()` used the synchronous-style
   `client.call(request)` - `wait_for_service(timeout_sec=...)` only
   bounds whether the service exists, never the response itself. Real
   rclpy's own synchronous `call()` needs an executor already spinning to
@@ -52,8 +51,7 @@ the old construction succeed again.
   mechanically without a hand-written entry replacing the stub first).
   Repo-hygiene fix, no runtime code changed, no version bump.
 - **`run_forever()`'s initial MQTT connect now retries with backoff**
-  (`connect_with_retry()`, new) - found in an ecosystem-wide
-  software-improvements audit: this bridge's process used to die
+  (`connect_with_retry()`, new) - this bridge's process used to die
   outright if it started before HYDRA-UMC-MQTT-BROKER was listening yet,
   a real race between two independent systemd units with no ordering
   guarantee across a reboot. Only `OSError` (what an unreachable broker

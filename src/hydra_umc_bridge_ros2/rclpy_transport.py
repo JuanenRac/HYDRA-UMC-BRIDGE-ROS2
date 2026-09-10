@@ -98,7 +98,7 @@ class SafeStopResult:
 class Ros2SafeStopClient:
     """Calls the real safe_stop_service via a real std_srvs/Trigger client.
 
-    ROS-01 (found in an ecosystem-wide software-improvements audit):
+    ROS-01:
     this used to call the synchronous-style `client.call(request)` -
     `wait_for_service(timeout_sec=...)` above only bounds whether the
     service exists, never the response itself. Real rclpy's own

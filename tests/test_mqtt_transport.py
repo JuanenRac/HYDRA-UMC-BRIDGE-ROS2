@@ -119,8 +119,7 @@ class RunForeverTests(unittest.TestCase):
 
 class ConnectWithRetryTests(unittest.TestCase):
     """connect_with_retry() is pure - no real paho-mqtt/broker needed to
-    prove the real startup-race tolerance an ecosystem-wide software
-    audit found missing here (this bridge's process used to die outright
+    prove the real startup-race tolerance that was missing here (this bridge's process used to die outright
     if it started before HYDRA-UMC-MQTT-BROKER was listening yet)."""
 
     def test_succeeds_on_the_first_try_without_sleeping(self):
