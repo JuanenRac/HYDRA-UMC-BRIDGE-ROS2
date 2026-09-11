@@ -22,6 +22,10 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
+> **Comprobación de honestidad - qué funciona realmente hoy:** el núcleo de coordinación sin dependencias (`coordinator.py` con `Ros2Coordinator`, que hace pasar cada despacho por el propio `evaluate_job()` de `HYDRA-UMC-SDK`), el transporte `rclpy` real (importado de forma perezosa) para `std_srvs/Trigger` y `std_msgs/String` (`rclpy_transport.py` con `Ros2SafeStopClient`/`Ros2StateSubscriber`), y el transporte de comandos/estado MQTT (`mqtt_transport.py`) son reales y están cubiertos por 30 tests unitarios que pasan (`python tools/build_test.py` - `test_coordinator.py`, `test_rclpy_transport.py`, `test_mqtt_transport.py`). Nada de esto se ha probado contra una instalación ROS 2 real, una red DDS real, ni un broker MQTT real - `test_rclpy_transport.py` corre contra un nodo/publicador falso y `test_mqtt_transport.py` contra un cliente de broker falso, así que `rclpy`/`std_srvs`/`std_msgs` ni siquiera necesitan estar instalados para que estos tests pasen. Los contratos personalizados `.srv`/`.action` de `inspect_service`/`job_action` todavía no tienen un tipo de mensaje ROS 2 estándar real ni ningún cliente. Ver "Estado actual y próximos pasos" más abajo, que ya lo indica con claridad, y `CHANGELOG.md` para lo que se ha entregado exactamente hasta ahora.
+
+---
+
 ## 1. 🛠️ VISIÓN TÉCNICA GENERAL
 
 **HYDRA-UMC-BRIDGE-ROS2** es la frontera de coordinación bidireccional de alto nivel entre HYDRA-UMC y ROS 2. Mapea la observación continua a un topic, la inspección inmediata a un service, y el trabajo de celda de larga duración a una action cancelable. No es un nodo de control de motores y no puede eludir HYDRA-UMC-SERVER, los límites de MCU, los watchdogs ni el E-STOP.
@@ -120,7 +124,7 @@ bash build.sh
 
 ## ✅ ESTADO ACTUAL Y PRÓXIMOS PASOS
 
-**Real hoy:** versión `0.0.7`, funcional como núcleo de coordinación sin dependencias (`Ros2Coordinator`) con una batería `unittest` determinista de veintinueve pruebas que cubre el núcleo de coordinación, el transporte MQTT y el transporte rclpy, enrutado de fases cerrado, un esquema de interfaz estático `plan-only` que declara la calidad de servicio (QoS) de durabilidad `transient_local` real que necesita el topic de estado, un transporte `rclpy` real (importado de forma perezosa) para las 2 interfaces con un tipo de mensaje ROS 2 estándar real, y scripts build-test no mutantes conectados a CI con un checkout del SDK.
+**Real hoy:** versión `0.0.7`, funcional como núcleo de coordinación sin dependencias (`Ros2Coordinator`) con una batería `unittest` determinista de treinta pruebas que cubre el núcleo de coordinación, el transporte MQTT y el transporte rclpy, enrutado de fases cerrado, un esquema de interfaz estático `plan-only` que declara la calidad de servicio (QoS) de durabilidad `transient_local` real que necesita el topic de estado, un transporte `rclpy` real (importado de forma perezosa) para las 2 interfaces con un tipo de mensaje ROS 2 estándar real, y scripts build-test no mutantes conectados a CI con un checkout del SDK.
 
 **Frontera de integración:** este puente es únicamente una frontera de coordinación — no es un nodo de control de motores, y no puede eludir HYDRA-UMC-SERVER, los límites de MCU, los watchdogs ni el E-STOP; cada trabajo despachado sigue pasando por la misma puerta compartida que usan todos los puentes hermanos.
 
