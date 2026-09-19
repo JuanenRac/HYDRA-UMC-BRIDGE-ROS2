@@ -6,12 +6,12 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
-## [0.0.7] - V07-014: the SDK's own real phase-construction rejection reached this bridge's test suite
+## [0.0.7] - the SDK's own real phase-construction rejection reached this bridge's test suite
 
 A second, closer review found this bridge's own
 `test_unknown_sdk_phase_fails_closed_instead_of_using_the_job_action`
 still constructed a `BridgeJob` directly with a raw `"SOME_FUTURE_PHASE"`
-string - HYDRA-UMC-SDK's own real fix (REV-008) now rejects that AT
+string - HYDRA-UMC-SDK's own real fix now rejects that AT
 CONSTRUCTION TIME, so the test never even reached the coordinator's own
 assertion. Split in two, same as HYDRA-UMC-BRIDGE-UAV's own
 already-updated test: a new
