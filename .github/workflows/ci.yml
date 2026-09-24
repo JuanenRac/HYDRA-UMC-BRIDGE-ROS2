@@ -34,7 +34,7 @@ jobs:
           from pathlib import Path
           root = Path(sys.argv[1])
           manifest = json.loads((root / "hydra-umc.project.json").read_text())
-          native = re.search(r'(?m)^version\s*=\s*"(\d+\.\d+\.\d+)"', (root / "pyproject.toml").read_text()).group(1)
+          native = re.search(r'(?m)^version\s*=\s*"(\d+\.\d+\.\d+(?:\.\d+)?)"', (root / "pyproject.toml").read_text()).group(1)
           assert manifest["version"] == native
           assert f"## [{native}]" in (root / "CHANGELOG.md").read_text()
           print(f"INCREMENTAL_VERSION_CONTRACT=PASS version={native}")
