@@ -120,7 +120,7 @@ def _fake_ros2_modules(spin_effect):
     Ros2SafeStopClient.call()'s own lazy `import rclpy` / `from
     std_srvs.srv import Trigger` succeed without a real ROS 2 install.
 
-    This tests the REAL control-flow logic ROS-01's fix added - calling
+    This tests the REAL control-flow logic 's fix added - calling
     call_async(), driving spin_until_future_complete(), and handling
     timeout/exception/success - not real ROS 2 message wire
     serialization or a real executor, which genuinely does need a real
@@ -149,7 +149,7 @@ def _fake_ros2_modules(spin_effect):
 
 
 class Ros2SafeStopClientRealControlFlowTests(unittest.TestCase):
-    """ROS-01 regression: exercises the real call_async()/spin_until_future_complete()
+    """regression: exercises the real call_async/spin_until_future_complete
     control flow via fake-but-structurally-real ROS 2 modules, proving
     the actual fix rather than just reading rclpy's own documentation."""
 
