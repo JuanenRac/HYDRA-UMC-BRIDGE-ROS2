@@ -22,9 +22,9 @@ minimal explicit double (`SimpleNamespace(phase=...)`) to keep proving
 fallback still fails closed - real defense-in-depth, not weakened to let
 the old construction succeed again.
 
-## [0.0.6] - ROS-01: real bounded safe-stop response, not just availability
+## [0.0.6] - real bounded safe-stop response, not just availability
 
-- **ROS-01 (P1):** `Ros2SafeStopClient.call()` used the synchronous-style
+- `Ros2SafeStopClient.call` used the synchronous-style
   `client.call(request)` - `wait_for_service(timeout_sec=...)` only
   bounds whether the service exists, never the response itself. Real
   rclpy's own synchronous `call()` needs an executor already spinning to
