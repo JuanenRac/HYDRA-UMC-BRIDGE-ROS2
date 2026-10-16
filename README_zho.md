@@ -10,7 +10,7 @@ GPL-3.0-or-later - see LICENSE
 
 # 🤖 HYDRA-UMC-BRIDGE-ROS2
 
-<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | 🇨🇳 <b>简体中文</b> | <a href="README_jpn.md">🇯🇵 日本語</a></p>
+<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | 🇨🇳 <b>简体中文</b> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 🔗 HYDRA-UMC 与 ROS 2 之间无依赖的协调边界
 
@@ -22,7 +22,7 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
-> **诚实检查——今天真正可运行的部分：** 无依赖的协调核心（`coordinator.py` 中的 `Ros2Coordinator`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）、面向 `std_srvs/Trigger` 和 `std_msgs/String` 的真实（延迟导入的）`rclpy` 传输层（`rclpy_transport.py` 中的 `Ros2SafeStopClient`/`Ros2StateSubscriber`），以及 MQTT 命令/状态传输（`mqtt_transport.py`）都是真实的，并由 30 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。以上这些都从未针对真实的 ROS 2 安装、真实的 DDS 网络或真实的 MQTT broker 进行过验证——`test_rclpy_transport.py` 是针对一个伪造的节点/发布者运行的，`test_mqtt_transport.py` 是针对一个伪造的 broker 客户端运行的，因此这些测试甚至不需要安装 `rclpy`/`std_srvs`/`std_msgs` 就能通过。自定义的 `.srv`/`.action` 契约 `inspect_service`/`job_action` 目前仍然没有真实的标准 ROS 2 消息类型，也完全没有客户端。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。
+> **诚实检查——今天真正可运行的部分：** 无依赖的协调核心（`coordinator.py` 中的 `Ros2Coordinator`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）、面向 `std_srvs/Trigger` 和 `std_msgs/String` 的真实（延迟导入的）`rclpy` 传输层（`rclpy_transport.py` 中的 `Ros2SafeStopClient`/`Ros2StateSubscriber`），以及 MQTT 命令/状态传输（`mqtt_transport.py`）都是真实的，并由 37 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。以上这些都从未针对真实的 ROS 2 安装、真实的 DDS 网络或真实的 MQTT broker 进行过验证——`test_rclpy_transport.py` 是针对一个伪造的节点/发布者运行的，`test_mqtt_transport.py` 是针对一个伪造的 broker 客户端运行的，因此这些测试甚至不需要安装 `rclpy`/`std_srvs`/`std_msgs` 就能通过。自定义的 `.srv`/`.action` 契约 `inspect_service`/`job_action` 目前仍然没有真实的标准 ROS 2 消息类型，也完全没有客户端。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。
 
 ---
 
@@ -40,6 +40,7 @@ GPL-3.0-or-later - see LICENSE
 * ✅ **真实的、部分的 `rclpy` 传输层:** `rclpy_transport.py` 如今已经用真实的标准 ROS 2 消息类型连接这 2 个接口——`Ros2SafeStopClient`(一个真实的 `std_srvs/Trigger` 客户端)和 `Ros2StateSubscriber`(一个真实的 `std_msgs/String` 订阅者,使用真实的 `transient_local` 持久性 QoS)。*(已实现,并在 `tests/test_rclpy_transport.py` 中测试)*
 * ✅ **非变更式构建/测试:** `build-test.bat`/`.sh` 编译源码并运行确定性单元测试,不改变版本或 CHANGELOG。*(已实现,见下方"构建与运行")*
 * 🔜 **为 `inspect_service`/`job_action` 定制的 `.srv`/`.action` 契约** —— 这些没有真实的标准 ROS 2 消息类型,因此为它们编写客户端需要本仓库先定义自己的接口包。*(计划中)*
+* ✅ **观测到的机器状态、保留消息与重复键：** 桥接器一旦跟随 ROS 2 状态主题，共享闸门就使用机器上报的状态，而不是作业中写的 `machine_state`（任何人都能在代理上发布的消息），从未收到消息的机器按 OFFLINE 处理；`handle_message()` 会忽略保留消息（代理在每次重连时都会重放），若传入 `IdempotencyStore`，对重复的 `idempotency_key` 返回第一次的答复。*（已实现，已在 `tests/test_intake.py` 中测试）*
 
 ---
 
@@ -80,6 +81,7 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_coordinator.py      # 协调核心的确定性单元测试
 │   ├── test_rclpy_transport.py  # 针对模拟节点/发布者的真实 rclpy 传输测试
 │   ├── test_mqtt_transport.py   # 针对模拟 broker 客户端的 MQTT 命令/状态格式测试
+│   ├── test_intake.py           # 观测状态、保留消息与重复幂等键
 │   └── fixtures/
 │       ├── interface-plan-v1.json    # schema-1.0 接口兼容性 fixture
 │       └── interface-plan-v1.1.json  # 已发布的 schema-1.1 接口兼容性 fixture
@@ -124,7 +126,7 @@ bash build.sh
 
 ## ✅ 当前状态与后续步骤
 
-**目前真实的部分:** 版本 `0.0.7`,作为一个无依赖协调核心(`Ros2Coordinator`)是功能齐备的,配有覆盖协调核心、MQTT 传输层和 rclpy 传输层的三十项确定性 `unittest` 测试套件、安全拒绝的阶段路由、声明了状态 topic 所需的真实 `transient_local` 持久性 QoS 的静态 `plan-only` 接口模式、为这 2 个接口提供真实标准 ROS 2 消息类型的真实(延迟导入的)`rclpy` 传输层,以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
+**目前真实的部分:** 版本 `0.0.8`,作为一个无依赖协调核心(`Ros2Coordinator`)是功能齐备的,配有覆盖协调核心、MQTT 传输层和 rclpy 传输层的三十七项确定性 `unittest` 测试套件、安全拒绝的阶段路由、声明了状态 topic 所需的真实 `transient_local` 持久性 QoS 的静态 `plan-only` 接口模式、为这 2 个接口提供真实标准 ROS 2 消息类型的真实(延迟导入的)`rclpy` 传输层,以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
 
 **集成边界:** 本桥接只是一个协调边界——它不是电机控制节点,也不能绕过 HYDRA-UMC-SERVER、MCU 限位、看门狗或急停;每个被派发的任务仍然要经过所有兄弟桥接使用的同一个共享门控。
 

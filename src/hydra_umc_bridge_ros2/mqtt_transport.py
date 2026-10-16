@@ -49,7 +49,8 @@ import time
 from dataclasses import asdict
 from typing import Callable
 
-from hydra_umc_sdk.bridge_contract import BridgeError, CellState, job_from_dict
+from hydra_umc_sdk.bridge_contract import BridgeError, CellState, MachineState, job_from_dict
+from hydra_umc_sdk.job_intake import IdempotencyStore
 
 from .coordinator import Ros2Coordinator
 from .rclpy_transport import Ros2Node, Ros2SafeStopClient, Ros2StateSubscriber
@@ -85,19 +86,46 @@ class Ros2MqttBridge:
     it, matching `Ros2Coordinator.dispatch()`'s own rclpy-free design.
     """
 
-    def __init__(self, node: Ros2Node, cell_state: Callable[[], CellState]) -> None:
+    def __init__(self, node: Ros2Node, cell_state: Callable[[], CellState], idempotency: IdempotencyStore | None = None) -> None:
         self.node = node
         self._cell_state = cell_state
         self._coordinator = Ros2Coordinator()
         self._safe_stop = Ros2SafeStopClient()
+        # docs/BRIDGE_CONTRACT.md: the idempotency key of a job is handled once; a repeat gets the answer that was given
+        self._idempotency = idempotency
+        # The machine state as the ROS 2 state topic reports it. Until `start_observing()` the gate falls back to the claim inside the job; once observing, a machine whose state
+        # was never heard (or is not a known state) counts as OFFLINE, so nothing productive is forwarded on a claim.
+        self._observing = False
+        self._observed: MachineState | None = None
 
-    def handle_message(self, topic: str, payload: bytes) -> list[MqttPublish]:
+    def start_observing(self) -> None:
+        self._observing = True
+        self._observed = None
+
+    def observe(self, state: str) -> None:
+        """One message of the ROS 2 state topic (`MachineState` names; anything else is not trusted)."""
+        self._observing = True
+        try:
+            self._observed = MachineState(str(state).strip().upper())
+        except ValueError:
+            self._observed = None
+
+    def _observed_state(self) -> MachineState | None:
+        if not self._observing:
+            return None
+        return self._observed if self._observed is not None else MachineState.OFFLINE
+
+    def handle_message(self, topic: str, payload: bytes, retained: bool = False) -> list[MqttPublish]:
         """Route one real inbound MQTT message. An unrecognised `cmd/`
         sub-topic (this bridge subscribes to `cmd/#`, a wildcard) is
         silently ignored, never an error - a future sibling topic this
-        version does not know about yet must never crash the message loop."""
+        version does not know about yet must never crash the message loop.
 
-        if not topic.startswith(TOPIC_PREFIX):
+        A RETAINED message is ignored: the broker replays it at every
+        reconnect, so a retained `cmd/job` or `cmd/safe_stop` would repeat a
+        command nobody sent again."""
+
+        if retained or not topic.startswith(TOPIC_PREFIX):
             return []
         suffix = topic[len(TOPIC_PREFIX) :]
 
@@ -115,11 +143,19 @@ class Ros2MqttBridge:
         except (json.JSONDecodeError, BridgeError, UnicodeDecodeError) as error:
             dispatch = {"accepted": False, "interface": "none", "reason": f"malformed job payload: {error}", "mode": "plan-only"}
             return MqttPublish(result_topic, json.dumps(dispatch))
-        dispatch = self._coordinator.dispatch(job, self._cell_state())
-        return MqttPublish(result_topic, json.dumps(asdict(dispatch)))
+        if self._idempotency is not None and not self._idempotency.claim(job.idempotency_key):
+            stored = self._idempotency.recall(job.idempotency_key)
+            if stored is None:
+                stored = json.dumps({"accepted": False, "interface": "none", "reason": "this idempotency_key was already handled", "mode": "plan-only"})
+            return MqttPublish(result_topic, stored)
+        dispatch = self._coordinator.dispatch(job, self._cell_state(), self._observed_state())
+        publish = MqttPublish(result_topic, json.dumps(asdict(dispatch)))
+        if self._idempotency is not None:
+            self._idempotency.remember(job.idempotency_key, publish.payload)
+        return publish
 
 
-def bridge_state_to_mqtt(node: Ros2Node, publish: Callable[[str, str, bool], None]) -> None:
+def bridge_state_to_mqtt(node: Ros2Node, publish: Callable[[str, str, bool], None], on_observed: Callable[[str], None] | None = None) -> None:
     """Subscribe to the real ROS 2 state topic and republish each update
     onto `hydra/bridges/ros2/state` (retained) via `publish(topic,
     payload, retain)`. The real, intended use of `Ros2StateSubscriber`'s
@@ -131,6 +167,8 @@ def bridge_state_to_mqtt(node: Ros2Node, publish: Callable[[str, str, bool], Non
     """
 
     def on_state(state: str) -> None:
+        if on_observed is not None:
+            on_observed(state)
         publish(f"{TOPIC_PREFIX}state", json.dumps({"state": state}), True)
 
     Ros2StateSubscriber().subscribe(node, Ros2Coordinator.state_topic, on_state)
@@ -198,7 +236,7 @@ def run_forever(
         client.subscribe(f"{TOPIC_PREFIX}cmd/#")  # type: ignore[attr-defined]
 
     def on_message(client: object, userdata: object, message: object) -> None:
-        for publish in bridge.handle_message(message.topic, message.payload):  # type: ignore[attr-defined]
+        for publish in bridge.handle_message(message.topic, message.payload, retained=bool(getattr(message, "retain", False))):  # type: ignore[attr-defined]
             client.publish(publish.topic, publish.payload, retain=publish.retain)  # type: ignore[attr-defined]
 
     client = mqtt.Client(client_id=client_id)
@@ -209,5 +247,6 @@ def run_forever(
         max_attempts=max_connect_attempts,
         retry_delay_seconds=connect_retry_delay_seconds,
     )
-    bridge_state_to_mqtt(bridge.node, lambda topic, payload, retain: client.publish(topic, payload, retain=retain))
+    bridge.start_observing()   # from here the gate uses the machine state the ROS 2 topic reports, not the claim inside a job
+    bridge_state_to_mqtt(bridge.node, lambda topic, payload, retain: client.publish(topic, payload, retain=retain), bridge.observe)
     client.loop_forever()

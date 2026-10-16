@@ -136,7 +136,7 @@ class Ros2Coordinator:
             self.safe_stop_service,
         )
 
-    def dispatch(self, job: BridgeJob, cell_state: CellState) -> Ros2Dispatch:
+    def dispatch(self, job: BridgeJob, cell_state: CellState, observed_machine_state: MachineState | None = None) -> Ros2Dispatch:
         interface = self._interfaces.get(job.phase)
         if interface is None:
             return Ros2Dispatch(
@@ -144,5 +144,6 @@ class Ros2Coordinator:
                 "none",
                 "job phase is not implemented by the ROS 2 interface plan",
             )
-        decision = evaluate_job(job, cell_state)
+        # the state the machine reported on the ROS 2 state topic, when the caller has one, replaces the claim in the job (see HYDRA-UMC-SDK's evaluate_job)
+        decision = evaluate_job(job, cell_state, observed_machine_state)
         return Ros2Dispatch(decision.allowed, interface, decision.reason)

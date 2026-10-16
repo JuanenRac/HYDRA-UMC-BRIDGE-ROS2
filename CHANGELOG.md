@@ -6,6 +6,13 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.0.8] - The gate uses the machine state the ROS 2 topic reports; retained messages are ignored and a repeated key is answered once
+
+- **Observed machine state.** The bridge follows the ROS 2 state topic (`observe()`); once it does, the shared gate uses what the machine reported instead of the `machine_state` a requester wrote in the job (a message anybody on the broker may publish), and a machine never heard from, or reporting a state that is not known, counts as OFFLINE. `Ros2Coordinator.dispatch()` takes the observed state as an optional argument.
+- **Retained messages.** `handle_message()` ignores a retained message: a retained `cmd/job` or `cmd/safe_stop` was repeated at every reconnect of the bridge (the CNC, laser and printer bridges had already fixed this).
+- **Idempotency keys.** With an `IdempotencyStore` from HYDRA-UMC-SDK a repeated job key gets the answer given the first time and is not evaluated again.
+- Seven new tests (tests/test_intake.py).
+
 ## [0.0.7] - the SDK's own real phase-construction rejection reached this bridge's test suite
 
 A second, closer review found this bridge's own
