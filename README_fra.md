@@ -81,6 +81,7 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_coordinator.py      # Tests unitaires déterministes du noyau de coordination
 │   ├── test_rclpy_transport.py  # Tests de transport rclpy réel contre un nœud/publisher simulé
 │   ├── test_mqtt_transport.py   # Tests de forme commande/état MQTT contre un client broker simulé
+│   ├── test_mqtt_environment.py # Les identifiants MQTT et le TLS de l'environnement du service atteignent le client
 │   ├── test_intake.py           # État observé, messages retenus et clés d'idempotence répétées
 │   └── fixtures/
 │       ├── interface-plan-v1.json    # Fixture de compatibilité d'interface schema-1.0
@@ -126,7 +127,7 @@ bash build.sh
 
 ## ✅ ÉTAT ACTUEL ET PROCHAINES ÉTAPES
 
-**Réel aujourd'hui :** version `0.0.8`, fonctionnel en tant que noyau de coordination sans dépendance (`Ros2Coordinator`) avec une suite `unittest` déterministe de trente-sept tests couvrant le noyau de coordination, le transport MQTT et le transport rclpy, un routage de phases fermé, un schéma d'interface statique `plan-only` déclarant la véritable qualité de service (QoS) de durabilité `transient_local` dont le topic d'état a besoin, un transport `rclpy` réel (importé de façon paresseuse) pour les 2 interfaces avec un vrai type de message ROS 2 standard, et des scripts build-test non mutants intégrés en CI avec un checkout du SDK.
+**Réel aujourd'hui :** version `0.0.9`, fonctionnel en tant que noyau de coordination sans dépendance (`Ros2Coordinator`) avec une suite `unittest` déterministe de trente-sept tests couvrant le noyau de coordination, le transport MQTT et le transport rclpy, un routage de phases fermé, un schéma d'interface statique `plan-only` déclarant la véritable qualité de service (QoS) de durabilité `transient_local` dont le topic d'état a besoin, un transport `rclpy` réel (importé de façon paresseuse) pour les 2 interfaces avec un vrai type de message ROS 2 standard, et des scripts build-test non mutants intégrés en CI avec un checkout du SDK.
 
 **Frontière d'intégration :** ce pont n'est qu'une frontière de coordination — ce n'est pas un nœud de contrôle moteur, et il ne peut pas contourner HYDRA-UMC-SERVER, les limites du MCU, les watchdogs ou l'E-STOP ; chaque tâche envoyée passe toujours par le même portail partagé utilisé par tous les ponts frères.
 

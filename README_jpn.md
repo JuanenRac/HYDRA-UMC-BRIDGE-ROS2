@@ -81,6 +81,7 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_coordinator.py      # 連携コアの決定論的ユニットテスト
 │   ├── test_rclpy_transport.py  # 疑似ノード/パブリッシャーに対する実rclpy転送テスト
 │   ├── test_mqtt_transport.py   # 疑似ブローカークライアントに対するMQTTコマンド/ステータス形状テスト
+│   ├── test_mqtt_environment.py # サービス環境の MQTT 認証情報と TLS がクライアントに届く
 │   ├── test_intake.py           # 観測した状態、保持メッセージ、重複した冪等キー
 │   └── fixtures/
 │       ├── interface-plan-v1.json    # schema-1.0 インターフェース互換性フィクスチャ
@@ -126,7 +127,7 @@ bash build.sh
 
 ## ✅ 現状と次のステップ
 
-**現時点で実在するもの:** バージョン `0.0.8`。連携コア、MQTTトランスポート、rclpyトランスポートを対象とする37件の決定論的な `unittest` スイート、フェイルクローズのフェーズルーティング、状態トピックが必要とする実際の `transient_local` durability QoS を宣言する静的な `plan-only` インターフェーススキーマ、実際の標準ROS 2メッセージ型を持つ2つのインターフェース向けの実際の(遅延インポートされる)`rclpy` トランスポート、SDKチェックアウトを伴いCIに組み込まれた非破壊的なbuild-testスクリプトを備える依存関係なしの連携コア(`Ros2Coordinator`)として機能している。
+**現時点で実在するもの:** バージョン `0.0.9`。連携コア、MQTTトランスポート、rclpyトランスポートを対象とする37件の決定論的な `unittest` スイート、フェイルクローズのフェーズルーティング、状態トピックが必要とする実際の `transient_local` durability QoS を宣言する静的な `plan-only` インターフェーススキーマ、実際の標準ROS 2メッセージ型を持つ2つのインターフェース向けの実際の(遅延インポートされる)`rclpy` トランスポート、SDKチェックアウトを伴いCIに組み込まれた非破壊的なbuild-testスクリプトを備える依存関係なしの連携コア(`Ros2Coordinator`)として機能している。
 
 **統合境界:** このブリッジは連携境界に過ぎない —— モーター制御ノードではなく、HYDRA-UMC-SERVER、MCUの限界、ウォッチドッグ、E-STOPを迂回することはできない。送信されるすべてのジョブは、依然としてすべての兄弟ブリッジが使う同じ共有ゲートを通過する。
 

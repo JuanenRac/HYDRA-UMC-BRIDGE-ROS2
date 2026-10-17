@@ -80,6 +80,7 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_coordinator.py      # Testes unitários deterministas do núcleo de coordenação
 │   ├── test_rclpy_transport.py  # Testes do transporte rclpy real contra um nó/publicador falso
 │   ├── test_mqtt_transport.py   # Testes do formato de comandos/estado MQTT contra um cliente de broker falso
+│   ├── test_mqtt_environment.py # As credenciais MQTT e o TLS do ambiente do serviço chegam ao cliente
 │   ├── test_intake.py           # Estado observado, mensagens retidas e chaves de idempotência repetidas
 │   └── fixtures/
 │       ├── interface-plan-v1.json    # Fixture de compatibilidade de interface do esquema 1.0
@@ -125,7 +126,7 @@ bash build.sh
 
 ## ✅ Estado atual e próximos passos
 
-**Real hoje:** versão `0.0.8`, funcional como núcleo de coordenação sem dependências (`Ros2Coordinator`) com uma suíte `unittest` determinista de trinta e sete testes que cobre o núcleo de coordenação, o transporte MQTT e o transporte rclpy, o encaminhamento de fases com falha segura, um esquema estático de interface `plan-only` que declara a QoS real de durabilidade `transient_local` de que o tópico de estado precisa, um transporte rclpy real (importado sob demanda) para as 2 interfaces com um tipo de mensagem ROS 2 padrão real e scripts build-test que não alteram nada ligados ao CI com um checkout do SDK.
+**Real hoje:** versão `0.0.9`, funcional como núcleo de coordenação sem dependências (`Ros2Coordinator`) com uma suíte `unittest` determinista de trinta e sete testes que cobre o núcleo de coordenação, o transporte MQTT e o transporte rclpy, o encaminhamento de fases com falha segura, um esquema estático de interface `plan-only` que declara a QoS real de durabilidade `transient_local` de que o tópico de estado precisa, um transporte rclpy real (importado sob demanda) para as 2 interfaces com um tipo de mensagem ROS 2 padrão real e scripts build-test que não alteram nada ligados ao CI com um checkout do SDK.
 
 **Fronteira de integração:** este bridge é apenas uma fronteira de coordenação: não é um nó de controlo de motores e não pode contornar o HYDRA-UMC-SERVER, os limites do MCU, os watchdogs nem a paragem de emergência (E-STOP); cada trabalho despachado continua a passar pela mesma porta partilhada que usam todos os bridges irmãos.
 

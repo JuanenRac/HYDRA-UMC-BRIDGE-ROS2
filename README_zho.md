@@ -81,6 +81,7 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_coordinator.py      # 协调核心的确定性单元测试
 │   ├── test_rclpy_transport.py  # 针对模拟节点/发布者的真实 rclpy 传输测试
 │   ├── test_mqtt_transport.py   # 针对模拟 broker 客户端的 MQTT 命令/状态格式测试
+│   ├── test_mqtt_environment.py # 服务环境中的 MQTT 凭据和 TLS 会传到客户端
 │   ├── test_intake.py           # 观测状态、保留消息与重复幂等键
 │   └── fixtures/
 │       ├── interface-plan-v1.json    # schema-1.0 接口兼容性 fixture
@@ -126,7 +127,7 @@ bash build.sh
 
 ## ✅ 当前状态与后续步骤
 
-**目前真实的部分:** 版本 `0.0.8`,作为一个无依赖协调核心(`Ros2Coordinator`)是功能齐备的,配有覆盖协调核心、MQTT 传输层和 rclpy 传输层的三十七项确定性 `unittest` 测试套件、安全拒绝的阶段路由、声明了状态 topic 所需的真实 `transient_local` 持久性 QoS 的静态 `plan-only` 接口模式、为这 2 个接口提供真实标准 ROS 2 消息类型的真实(延迟导入的)`rclpy` 传输层,以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
+**目前真实的部分:** 版本 `0.0.9`,作为一个无依赖协调核心(`Ros2Coordinator`)是功能齐备的,配有覆盖协调核心、MQTT 传输层和 rclpy 传输层的三十七项确定性 `unittest` 测试套件、安全拒绝的阶段路由、声明了状态 topic 所需的真实 `transient_local` 持久性 QoS 的静态 `plan-only` 接口模式、为这 2 个接口提供真实标准 ROS 2 消息类型的真实(延迟导入的)`rclpy` 传输层,以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
 
 **集成边界:** 本桥接只是一个协调边界——它不是电机控制节点,也不能绕过 HYDRA-UMC-SERVER、MCU 限位、看门狗或急停;每个被派发的任务仍然要经过所有兄弟桥接使用的同一个共享门控。
 
