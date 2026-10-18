@@ -6,6 +6,9 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.1.1] - Maturity lowered to functional
+- Maturity is functional: the code, tests and documentation are in place, but nothing here has been verified on real hardware yet, so the manifest no longer claims the established level.
+
 ## [0.1.0] - A node that is really spun, a loop that survives its input and honest answers
 
 - **The node is spun.** `spin_node_in_background()` runs the node on a `SingleThreadedExecutor` thread and `run_forever()` uses it. Before, nothing spun the node, so the state subscription never delivered and every productive job was refused as OFFLINE (the state was only refreshed as a side effect of a safe-stop call). `Ros2SafeStopClient(node_is_spinning=True)` waits for its answer instead of spinning the node a second time, which two executors cannot do.
