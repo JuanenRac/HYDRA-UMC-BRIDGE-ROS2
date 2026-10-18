@@ -26,6 +26,17 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
+## 📋 速览
+
+| | |
+|---|---|
+| 版本 | `0.1.2` |
+| 成熟度 | 可用 |
+| 测试 | 64 (`python tools/build_test.py`) |
+| 技术栈 | Python / ROS 2 / rclpy / HYDRA-UMC-SDK |
+| 目标 | HYDRA-UMC 工作单元的 Raspberry Pi CM5 |
+| 真实硬件 | 仅模拟：使用模拟器、替身或仿真测试；此版本没有在真实硬件上运行的记录 |
+
 ## 1. 🛠️ 技术概览
 
 **HYDRA-UMC-BRIDGE-ROS2** 是 HYDRA-UMC 与 ROS 2 之间双向的高层协调边界。它把持续观测映射为 topic,把即时检查映射为 service,把长时间运行的单元作业映射为可取消的 action。它不是一个电机控制节点,也不能绕过 HYDRA-UMC-SERVER、MCU 限位、看门狗或急停(E-STOP)。 目前只接通了状态主题和安全停止服务;检查服务和作业 action 只是保留的名称,背后还没有消息类型。必须转动节点状态主题才会被送达:`run_forever()` 会在独立线程中完成。

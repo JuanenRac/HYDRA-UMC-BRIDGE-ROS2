@@ -25,6 +25,17 @@ GPL-3.0-or-later - see LICENSE
 > **Verificação de honestidade - o que realmente corre hoje:** o núcleo de coordenação sem dependências (o `Ros2Coordinator` de `coordinator.py`, que encaminha cada despacho pelo `evaluate_job()` do próprio `HYDRA-UMC-SDK`), o transporte `rclpy` real (importado sob demanda) para `std_srvs/Trigger` e `std_msgs/String` (o `Ros2SafeStopClient`/`Ros2StateSubscriber` de `rclpy_transport.py`) e o transporte MQTT de comandos/estado (`mqtt_transport.py`) são reais e estão cobertos por 64 testes unitários que passam (`python tools/build_test.py` - `test_coordinator.py`, `test_rclpy_transport.py`, `test_mqtt_transport.py`, `test_intake.py`, `test_mqtt_environment.py`, `test_hardening.py`). Nada disto foi exercitado contra uma instalação real do ROS 2, uma rede DDS real ou um broker MQTT real: `test_rclpy_transport.py` corre contra um nó/publicador falso e `test_mqtt_transport.py` contra um cliente de broker falso, pelo que nem sequer é preciso ter `rclpy`/`std_srvs`/`std_msgs` instalados para estes testes passarem. Os contratos `.srv`/`.action` personalizados `inspect_service`/`job_action` ainda não têm nenhum tipo de mensagem ROS 2 padrão real nem nenhum cliente. Ver «Estado atual e próximos passos» abaixo, que já o diz com clareza, e `CHANGELOG.md` para saber exatamente o que foi entregue até agora.
 
 ---
+## 📋 Num relance
+
+| | |
+|---|---|
+| Versão | `0.1.2` |
+| Maturidade | Funcional |
+| Testes | 64 (`python tools/build_test.py`) |
+| Tecnologia | Python / ROS 2 / rclpy / HYDRA-UMC-SDK |
+| Destino | O Raspberry Pi CM5 de uma célula HYDRA-UMC |
+| Em hardware real | Só simulado: testado com emuladores, dublês de teste ou simuladores; não há registo de execução em hardware real para esta versão |
+
 ## 1. 🛠️ VISÃO TÉCNICA GERAL
 
 O **HYDRA-UMC-BRIDGE-ROS2** é a fronteira de coordenação bidirecional e de alto nível entre o HYDRA-UMC e o ROS 2. Associa a observação contínua a um tópico, a inspeção imediata a um serviço e o trabalho de célula de longa duração a uma ação cancelável. Não é um nó de controlo de motores e não pode contornar o HYDRA-UMC-SERVER, os limites do MCU, os watchdogs nem a paragem de emergência (E-STOP). Hoje só o tópico de estado e o serviço de paragem segura estão ligados; o serviço de inspeção e a ação de trabalho são nomes reservados sem tipo de mensagem por trás. O nó tem de girar para o tópico de estado ser entregue: o `run_forever()` fá-lo numa thread própria.

@@ -26,6 +26,17 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
+## 📋 De un vistazo
+
+| | |
+|---|---|
+| Versión | `0.1.2` |
+| Madurez | Funcional |
+| Tests | 64 (`python tools/build_test.py`) |
+| Tecnología | Python / ROS 2 / rclpy / HYDRA-UMC-SDK |
+| Destino | La Raspberry Pi CM5 de una celda HYDRA-UMC |
+| En hardware real | Solo simulado: probado con emuladores, dobles de prueba o simuladores; no consta ninguna ejecución en hardware real para esta versión |
+
 ## 1. 🛠️ VISIÓN TÉCNICA GENERAL
 
 **HYDRA-UMC-BRIDGE-ROS2** es la frontera de coordinación bidireccional de alto nivel entre HYDRA-UMC y ROS 2. Mapea la observación continua a un topic, la inspección inmediata a un service, y el trabajo de celda de larga duración a una action cancelable. No es un nodo de control de motores y no puede eludir HYDRA-UMC-SERVER, los límites de MCU, los watchdogs ni el E-STOP. Hoy solo están conectados el topic de estado y el servicio de parada segura; el servicio de inspección y la acción de trabajo son nombres reservados sin tipo de mensaje detrás. El nodo tiene que girar para que se entregue el topic de estado: `run_forever()` lo hace en un hilo propio.
