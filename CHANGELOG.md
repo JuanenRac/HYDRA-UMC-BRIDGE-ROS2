@@ -6,6 +6,18 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.1.0] - A node that is really spun, a loop that survives its input and honest answers
+
+- **The node is spun.** `spin_node_in_background()` runs the node on a `SingleThreadedExecutor` thread and `run_forever()` uses it. Before, nothing spun the node, so the state subscription never delivered and every productive job was refused as OFFLINE (the state was only refreshed as a side effect of a safe-stop call). `Ros2SafeStopClient(node_is_spinning=True)` waits for its answer instead of spinning the node a second time, which two executors cannot do.
+- **The loop does not die on its input.** `handle_message()` never raises: a deeply nested JSON (which used to end `loop_forever()` with a `RecursionError`), an oversized payload and any unexpected failure come back as a refusal on the verb's result topic. `Ros2SafeStopClient.call()` returns a result for any failure, including a down rclpy context.
+- **Safe stop.** The service client is created once and reused (a new one per call leaked DDS entities), is not waited for when already ready, and `cmd/safe_stop` runs on a lane of its own that never queues behind a slow command.
+- **paho-mqtt callback API version 2**, `reconnect_delay_set`, and a Last Will on `hydra/bridges/ros2/availability` ("online" once connected, "offline" when the link is lost); the dependency is `paho-mqtt>=2.0,<3`.
+- **Answers.** `cmd/job` answers `allowed` as every bridge does, and `accepted` as before. An `ABORT` job no longer claims it was "forwarded to the authorised safety path": the dispatch is plan-only, and the answer says so and names `cmd/safe_stop` as the real stop.
+- **State topic.** The republished state is `{"state", "machine_state", "observed_at"}` (the raw string, the machine state it normalizes to or null, and when it was heard). `run_forever()` refuses to start when the state topic cannot be subscribed instead of refusing every job as OFFLINE without a word. A state that stops being republished can now count as OFFLINE: `observed_max_age_seconds` (off by default, since it needs a publisher that republishes on a timer). Any node of the same ROS domain can still publish on the topic: restricting that is a matter of SROS2 or DDS permissions.
+- **Documentation.** The test counts and the list of test files, the four interfaces, what is really connected, the need to spin the node and the diagram (no path to the server exists in this code) are corrected in the eight READMEs and the guide; `LICENSE` carries the full GPL-3.0 text.
+- Not run against a real ROS 2 graph: the executor, the future wait and the QoS behaviour are checked against fakes only.
+- 23 new tests (64 in total); an unused import in the CI validator removed.
+
 ## [0.0.9] - Connects to a broker that demands credentials: user, password and TLS from the environment
 
 - The MQTT client now takes its credentials and TLS from the environment of the service (`HYDRA_MQTT_USERNAME`, `HYDRA_MQTT_PASSWORD` or `HYDRA_MQTT_PASSWORD_FILE`, `HYDRA_MQTT_TLS_CA`) through `hydra_umc_sdk.mqtt_connection`, so it can reach a production HYDRA-UMC-MQTT-BROKER, which refuses anonymous clients and evaluates its ACL for the identity of the credential.

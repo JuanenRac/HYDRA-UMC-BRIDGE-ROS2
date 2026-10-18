@@ -22,25 +22,26 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
-> **誠実性チェック - 今日実際に動くもの:** 依存関係のない調整コア（`coordinator.py` の `Ros2Coordinator`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、`std_srvs/Trigger` と `std_msgs/String` 向けの本物の（遅延インポートされる）`rclpy` トランスポート（`rclpy_transport.py` の `Ros2SafeStopClient`/`Ros2StateSubscriber`）、および MQTT コマンド/状態トランスポート（`mqtt_transport.py`）は本物であり、37件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。これらはいずれも、本物の ROS 2 インストール、本物の DDS ネットワーク、あるいは本物の MQTT ブローカーに対しては検証されていない - `test_rclpy_transport.py` は模擬ノード/パブリッシャーに対して実行され、`test_mqtt_transport.py` も模擬ブローカークライアントに対して実行されるため、これらのテストの通過には `rclpy`/`std_srvs`/`std_msgs` すらインストールされている必要がない。カスタムの `.srv`/`.action` 契約である `inspect_service`/`job_action` には、まだ本物の標準 ROS 2 メッセージ型もクライアントも一切存在しない。詳細は下記の「現状と次のステップ」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。
+> **誠実性チェック - 今日実際に動くもの:** 依存関係のない調整コア（`coordinator.py` の `Ros2Coordinator`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、`std_srvs/Trigger` と `std_msgs/String` 向けの本物の（遅延インポートされる）`rclpy` トランスポート（`rclpy_transport.py` の `Ros2SafeStopClient`/`Ros2StateSubscriber`）、および MQTT コマンド/状態トランスポート（`mqtt_transport.py`）は本物であり、64件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。これらはいずれも、本物の ROS 2 インストール、本物の DDS ネットワーク、あるいは本物の MQTT ブローカーに対しては検証されていない - `test_rclpy_transport.py` は模擬ノード/パブリッシャーに対して実行され、`test_mqtt_transport.py` も模擬ブローカークライアントに対して実行されるため、これらのテストの通過には `rclpy`/`std_srvs`/`std_msgs` すらインストールされている必要がない。カスタムの `.srv`/`.action` 契約である `inspect_service`/`job_action` には、まだ本物の標準 ROS 2 メッセージ型もクライアントも一切存在しない。詳細は下記の「現状と次のステップ」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。
 
 ---
 
 ## 1. 🛠️ 技術概要
 
-**HYDRA-UMC-BRIDGE-ROS2** は、HYDRA-UMCとROS 2との間の双方向・高レベルの連携境界である。継続的な観測をtopicに、即時の検査をserviceに、長時間実行されるセル作業をキャンセル可能なactionにマッピングする。モーター制御ノードではなく、HYDRA-UMC-SERVER、MCUの限界、ウォッチドッグ、E-STOPを迂回することはできない。
+**HYDRA-UMC-BRIDGE-ROS2** は、HYDRA-UMCとROS 2との間の双方向・高レベルの連携境界である。継続的な観測をtopicに、即時の検査をserviceに、長時間実行されるセル作業をキャンセル可能なactionにマッピングする。モーター制御ノードではなく、HYDRA-UMC-SERVER、MCUの限界、ウォッチドッグ、E-STOPを迂回することはできない。 現時点で接続されているのは状態トピックと安全停止サービスだけで、点検サービスとジョブactionは、メッセージ型がまだ存在しない予約名である。状態トピックが届くにはノードを回す必要があり、`run_forever()` が専用スレッドでそれを行う。
 
 本リポジトリは **External Automation Bridges** ファミリーに属する。CNC・LASER・OPENPNP・PRINTER3D・ROS2という兄弟リポジトリ群が、すべて `HYDRA-UMC-SDK` の同じ安全契約を共有しており、いずれのブリッジも独自の「作業に安全」という定義を勝手に作ることはできない。
 
 ### 主な機能:
 * ✅ **実在する依存関係なしの連携コア:** `coordinator.py` の `Ros2Coordinator` には `rclpy` のインポートが一切ない —— 意図的に純粋なPythonであり、ROS 2のインストールなしにどのホストでもテスト可能である。*(実装済み、`tests/test_coordinator.py` でテスト済み)*
-* ✅ **実在する3方向インターフェースマッピング:** 3つの固定クラス属性が、それぞれの目的に対して正確なROS 2インターフェース種別を予約する —— `/hydra_umc/machine_state`(topic、継続的な状態)、`/hydra_umc/inspect_cell`(service、短時間の検査)、`/hydra_umc/execute_cell_job`(action、キャンセル可能なジョブ)。*(実装済み)*
+* ✅ **実在する4方向インターフェースマッピング:** 4つの固定クラス属性が、それぞれの目的に対して正確なROS 2インターフェース種別を予約する —— `/hydra_umc/machine_state`(topic、継続的な状態)、`/hydra_umc/inspect_cell`(service、短時間の検査)、`/hydra_umc/execute_cell_job`(action、キャンセル可能なジョブ)、`/hydra_umc/request_safe_stop`(サービス、制御された停止)。*(実装済み)*
 * ✅ **実在する共有安全ゲート:** `Ros2Coordinator.dispatch()` を通じて送信されるすべてのジョブは、`HYDRA-UMC-SDK` の `bridge_contract` にある `evaluate_job()` によって評価される。これは他のすべての兄弟ブリッジとHYDRA-UMC-SERVERが使うのと同じゲートである。実際のフェーズには外部機械が `IDLE` であり、HYDRA-UMCセルが `READY` であることが必要だが、`ABORT` は故障中でも要求可能である。*(実装済み)*
 * ✅ **フェイルクローズのフェーズルーティングと静的エビデンス:** 生産フェーズは計画済みのジョブアクションにのみマッピングされ、`ABORT` は `/hydra_umc/request_safe_stop` にマッピングされる。未知の将来SDKフェーズは拒否される。`inspect_interface_plan.py` は、状態トピックが必要とする実際の `transient_local` durability QoS(ROS 1のlatchedパブリッシャーに代わるROS 2独自の仕組みで、design.ros2.org/articles/qos.html を参照して調査済み)を含む、静的スキーマ `1.1` のプランを、`rclpy` のインポートやDDSへの接続なしに出力する。*(実装・テスト済み)*
 * ✅ **実在する部分的な `rclpy` トランスポート:** `rclpy_transport.py` は、今日すでに実際の標準ROS 2メッセージ型で2つのインターフェースを接続する —— `Ros2SafeStopClient`(実際の `std_srvs/Trigger` クライアント)と `Ros2StateSubscriber`(実際の `transient_local` durability QoSを使用する、実際の `std_msgs/String` サブスクライバー)。*(実装済み、`tests/test_rclpy_transport.py` でテスト済み)*
 * ✅ **非破壊的なビルド/テスト:** `build-test.bat`/`.sh` はソースをコンパイルし、バージョンやCHANGELOGを変更せずに決定論的なユニットテストを実行する。*(実装済み、下記「ビルドと実行」を参照)*
 * 🔜 **`inspect_service`/`job_action` 用のカスタム `.srv`/`.action` 契約** —— これらには実在する標準ROS 2メッセージ型が存在しないため、そのためのクライアントには、まずこのリポジトリが独自のインターフェースパッケージを定義する必要がある。*(計画中)*
 * ✅ **観測した機器の状態、保持メッセージ、重複キー:** ブリッジが ROS 2 の状態トピックを追うようになると、共有ゲートはジョブに書かれた `machine_state`（ブローカー上の誰でも発行できるメッセージ）ではなく、機器が報告した状態を使い、一度も報告のない機器は OFFLINE として扱います。`handle_message()` は保持メッセージ（ブローカーが再接続のたびに再送するもの）を無視し、`IdempotencyStore` が渡された場合は、重複した `idempotency_key` に最初の応答を返します。*（実装済み、`tests/test_intake.py` でテスト済み）*
+* ✅ **入力に耐えるメッセージループ、実際に回されるノード、古くなり得る状態:** `handle_message()` は例外を投げません(大きすぎる、または深くネストしたJSONや予期しない失敗は拒否として返ります)。`cmd/job` は他のブリッジと同じ `allowed` で答え(従来の `accepted` も維持)、`ABORT` ジョブは計画のみであり実際の停止は `cmd/safe_stop` であることを明示します。`run_forever()` はノードを専用スレッドで回し(`spin_node_in_background()`、状態トピックが実際に届くように)、サービスクライアントを1つ使い回し、`cmd/safe_stop` を他のコマンドの後ろで待たないレーンで実行し、`availability` にLast Willを残し、正規化した `machine_state` と `observed_at` 時刻付きで状態を再公開し、ROS 2の状態トピックを購読できないときは起動を拒否します。`observed_max_age_seconds` は再公開されなくなった状態をOFFLINEとして扱います(既定では無効)。*(実装済み、ダブルでテスト済み。実際のROS 2グラフでは未実行のため、エグゼキューターとQoSの挙動は未検証です)*
 
 ---
 
@@ -50,8 +51,7 @@ GPL-3.0-or-later - see LICENSE
 flowchart LR
     ROS["ROS 2ノード"] -- "topic / service / action" --> BRIDGE["BRIDGE-ROS2<br/>Ros2Coordinator.dispatch()"]
     BRIDGE -- BridgeJob --> SDK["HYDRA-UMC-SDK<br/>evaluate_job()"]
-    SDK -- GateDecision --> SERVER["HYDRA-UMC-SERVER"]
-    SERVER -- "ジョブ / 中止" --> MCU["MCU安全"]
+    SDK -- GateDecision --> BRIDGE
 ```
 
 ---
@@ -83,6 +83,7 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_mqtt_transport.py   # 疑似ブローカークライアントに対するMQTTコマンド/ステータス形状テスト
 │   ├── test_mqtt_environment.py # サービス環境の MQTT 認証情報と TLS がクライアントに届く
 │   ├── test_intake.py           # 観測した状態、保持メッセージ、重複した冪等キー
+│   ├── test_hardening.py        # 入力に耐えるループ、ノードの回転、古い状態、last will
 │   └── fixtures/
 │       ├── interface-plan-v1.json    # schema-1.0 インターフェース互換性フィクスチャ
 │       └── interface-plan-v1.1.json  # 公開 schema-1.1 インターフェース互換性フィクスチャ
@@ -121,13 +122,13 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` は `src/` 配下の各モジュールを `py_compile` でコンパイルし、`unittest` の全スイート(`tests/test_coordinator.py`)を実行する —— ROS 2のインストールもネットワークも不要で決定論的に動作し、バージョンやCHANGELOGを変更しない。`build` はまず同じ検証を実行し、成功した場合のみ `tools/bump_version.py` を呼び出して `pyproject.toml`、`hydra-umc.project.json`、`CHANGELOG.md` の間でバージョンを同期する。実際のハードウェア向け `run` コマンドはまだ存在しない —— それには検証済みのROS 2デプロイメントが必要である。
+`build-test` は `src/` 配下の各モジュールを `py_compile` でコンパイルし、`unittest` の全スイート(`tests/` 配下のすべての `test_*.py`)を実行する —— ROS 2のインストールもネットワークも不要で決定論的に動作し、バージョンやCHANGELOGを変更しない。`build` はまず同じ検証を実行し、成功した場合のみ `tools/bump_version.py` を呼び出して `pyproject.toml`、`hydra-umc.project.json`、`CHANGELOG.md` の間でバージョンを同期する。実際のハードウェア向け `run` コマンドはまだ存在しない —— それには検証済みのROS 2デプロイメントが必要である。
 
 ---
 
 ## ✅ 現状と次のステップ
 
-**現時点で実在するもの:** バージョン `0.0.9`。連携コア、MQTTトランスポート、rclpyトランスポートを対象とする37件の決定論的な `unittest` スイート、フェイルクローズのフェーズルーティング、状態トピックが必要とする実際の `transient_local` durability QoS を宣言する静的な `plan-only` インターフェーススキーマ、実際の標準ROS 2メッセージ型を持つ2つのインターフェース向けの実際の(遅延インポートされる)`rclpy` トランスポート、SDKチェックアウトを伴いCIに組み込まれた非破壊的なbuild-testスクリプトを備える依存関係なしの連携コア(`Ros2Coordinator`)として機能している。
+**現時点で実在するもの:** バージョン `0.1.0`。連携コア、MQTTトランスポート、rclpyトランスポートを対象とする64件の決定論的な `unittest` スイート、フェイルクローズのフェーズルーティング、状態トピックが必要とする実際の `transient_local` durability QoS を宣言する静的な `plan-only` インターフェーススキーマ、実際の標準ROS 2メッセージ型を持つ2つのインターフェース向けの実際の(遅延インポートされる)`rclpy` トランスポート、SDKチェックアウトを伴いCIに組み込まれた非破壊的なbuild-testスクリプトを備える依存関係なしの連携コア(`Ros2Coordinator`)として機能している。
 
 **統合境界:** このブリッジは連携境界に過ぎない —— モーター制御ノードではなく、HYDRA-UMC-SERVER、MCUの限界、ウォッチドッグ、E-STOPを迂回することはできない。送信されるすべてのジョブは、依然としてすべての兄弟ブリッジが使う同じ共有ゲートを通過する。
 

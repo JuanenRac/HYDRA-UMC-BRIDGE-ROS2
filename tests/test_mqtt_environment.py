@@ -31,6 +31,12 @@ class FakeClient:
     def subscribe(self, *args, **kwargs):
         pass
 
+    def reconnect_delay_set(self, *args, **kwargs):
+        pass
+
+    def will_set(self, *args, **kwargs):
+        pass
+
     def loop_forever(self):
         return None
 
@@ -46,15 +52,20 @@ def fake_paho():
     mqtt_package = types.ModuleType("paho.mqtt")
     client_module = types.ModuleType("paho.mqtt.client")
     client_module.Client = FakeClient
+    client_module.CallbackAPIVersion = types.SimpleNamespace(VERSION2=2)
     paho.mqtt = mqtt_package
     mqtt_package.client = client_module
     return {"paho": paho, "paho.mqtt": mqtt_package, "paho.mqtt.client": client_module}
 
 
 def connect(**kwargs):
-    from hydra_umc_bridge_ros2 import run_forever
+    from hydra_umc_bridge_ros2 import SubscribeResult, run_forever
 
-    run_forever(mock.MagicMock(), "127.0.0.1", **kwargs)
+    # no ROS 2 here: the node is not spun and the state topic is taken as subscribed
+    with mock.patch("hydra_umc_bridge_ros2.mqtt_transport.spin_node_in_background"), mock.patch(
+        "hydra_umc_bridge_ros2.mqtt_transport.bridge_state_to_mqtt", return_value=SubscribeResult(True, "subscribed")
+    ):
+        run_forever(mock.MagicMock(), "127.0.0.1", **kwargs)
 
 
 class MqttEnvironmentTests(unittest.TestCase):

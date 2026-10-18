@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hydra-umc-bridge-ros2"
-version = "0.0.9"
+version = "0.1.0"
 description = "Fail-safe HYDRA-UMC to ROS 2 coordination boundary"
 requires-python = ">=3.11"
 license = {text = "GPL-3.0-or-later"}
@@ -29,7 +29,7 @@ dependencies = [
 # run_forever() needs this, it's imported lazily (see mqtt_transport.py's
 # own comment) so the rest of the package, including every topic-dispatch
 # test, works without it installed.
-mqtt = ["paho-mqtt>=2.0"]
+mqtt = ["paho-mqtt>=2.0,<3"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -9,13 +9,15 @@
 from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, MachineState
 
 from .coordinator import Ros2Coordinator, Ros2Dispatch, Ros2InterfacePlan
-from .mqtt_transport import MqttPublish, Ros2MqttBridge, bridge_state_to_mqtt, connect_with_retry, run_forever
+from .mqtt_transport import MessageDispatcher, MqttPublish, Ros2MqttBridge, bridge_state_to_mqtt, connect_with_retry, run_forever
 from .rclpy_transport import (
+    Ros2NodeSpinner,
     Ros2SafeStopClient,
     Ros2StateSubscriber,
     SafeStopResult,
     SubscribeResult,
     create_ros2_node,
+    spin_node_in_background,
 )
 
 __all__ = [
@@ -26,8 +28,11 @@ __all__ = [
     "Ros2Coordinator",
     "Ros2Dispatch",
     "Ros2InterfacePlan",
+    "MessageDispatcher",
+    "Ros2NodeSpinner",
     "Ros2SafeStopClient",
     "Ros2StateSubscriber",
+    "spin_node_in_background",
     "SafeStopResult",
     "SubscribeResult",
     "create_ros2_node",

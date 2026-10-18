@@ -22,25 +22,26 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
-> **Vérification d'honnêteté - ce qui fonctionne réellement aujourd'hui :** le cœur de coordination sans dépendance (`coordinator.py` avec `Ros2Coordinator`, faisant passer chaque envoi par le propre `evaluate_job()` de `HYDRA-UMC-SDK`), le vrai transport `rclpy` (importé de façon paresseuse) pour `std_srvs/Trigger` et `std_msgs/String` (`rclpy_transport.py` avec `Ros2SafeStopClient`/`Ros2StateSubscriber`), et le transport de commandes/état MQTT (`mqtt_transport.py`) sont réels et couverts par 37 tests unitaires qui passent (`python tools/build_test.py` - `test_coordinator.py`, `test_rclpy_transport.py`, `test_mqtt_transport.py`, `test_intake.py`). Rien de tout cela n'a été testé contre une vraie installation ROS 2, un vrai réseau DDS, ou un vrai broker MQTT - `test_rclpy_transport.py` tourne contre un nœud/éditeur factice et `test_mqtt_transport.py` contre un client de broker factice, si bien que `rclpy`/`std_srvs`/`std_msgs` n'ont même pas besoin d'être installés pour que ces tests passent. Les contrats personnalisés `.srv`/`.action` `inspect_service`/`job_action` n'ont encore aucun vrai type de message ROS 2 standard ni aucun client. Voir « État actuel et prochaines étapes » ci-dessous, qui le dit déjà clairement, et `CHANGELOG.md` pour ce qui a été exactement livré jusqu'à présent.
+> **Vérification d'honnêteté - ce qui fonctionne réellement aujourd'hui :** le cœur de coordination sans dépendance (`coordinator.py` avec `Ros2Coordinator`, faisant passer chaque envoi par le propre `evaluate_job()` de `HYDRA-UMC-SDK`), le vrai transport `rclpy` (importé de façon paresseuse) pour `std_srvs/Trigger` et `std_msgs/String` (`rclpy_transport.py` avec `Ros2SafeStopClient`/`Ros2StateSubscriber`), et le transport de commandes/état MQTT (`mqtt_transport.py`) sont réels et couverts par 64 tests unitaires qui passent (`python tools/build_test.py` - `test_coordinator.py`, `test_rclpy_transport.py`, `test_mqtt_transport.py`, `test_intake.py`, `test_mqtt_environment.py`, `test_hardening.py`). Rien de tout cela n'a été testé contre une vraie installation ROS 2, un vrai réseau DDS, ou un vrai broker MQTT - `test_rclpy_transport.py` tourne contre un nœud/éditeur factice et `test_mqtt_transport.py` contre un client de broker factice, si bien que `rclpy`/`std_srvs`/`std_msgs` n'ont même pas besoin d'être installés pour que ces tests passent. Les contrats personnalisés `.srv`/`.action` `inspect_service`/`job_action` n'ont encore aucun vrai type de message ROS 2 standard ni aucun client. Voir « État actuel et prochaines étapes » ci-dessous, qui le dit déjà clairement, et `CHANGELOG.md` pour ce qui a été exactement livré jusqu'à présent.
 
 ---
 
 ## 1. 🛠️ APERÇU TECHNIQUE
 
-**HYDRA-UMC-BRIDGE-ROS2** est la frontière de coordination bidirectionnelle et haut niveau entre HYDRA-UMC et ROS 2. Elle associe l'observation continue à un topic, l'inspection immédiate à un service, et le travail de cellule de longue durée à une action annulable. Ce n'est pas un nœud de contrôle moteur, et elle ne peut pas contourner HYDRA-UMC-SERVER, les limites du MCU, les watchdogs ou l'E-STOP.
+**HYDRA-UMC-BRIDGE-ROS2** est la frontière de coordination bidirectionnelle et haut niveau entre HYDRA-UMC et ROS 2. Elle associe l'observation continue à un topic, l'inspection immédiate à un service, et le travail de cellule de longue durée à une action annulable. Ce n'est pas un nœud de contrôle moteur, et elle ne peut pas contourner HYDRA-UMC-SERVER, les limites du MCU, les watchdogs ou l'E-STOP. Aujourd'hui, seuls le topic d'état et le service d'arrêt sûr sont connectés ; le service d'inspection et l'action de travail sont des noms réservés sans type de message derrière. Le nœud doit tourner pour que le topic d'état soit livré : `run_forever()` le fait sur un fil dédié.
 
 Il appartient à la famille **External Automation Bridges** : un ensemble de dépôts frères (CNC, LASER, OPENPNP, PRINTER3D, ROS2) qui partagent le même contrat de sécurité de `HYDRA-UMC-SDK`, afin qu'aucun pont ne puisse inventer sa propre définition du « sûr pour travailler ».
 
 ### Fonctionnalités clés :
 * ✅ **Noyau de coordination sans dépendance, réel :** `coordinator.py` — `Ros2Coordinator` n'importe `rclpy` en aucun cas ; c'est du Python pur délibérément, testable sur n'importe quel hôte sans installation de ROS 2. *(implémenté, testé dans `tests/test_coordinator.py`)*
-* ✅ **Mappage à trois interfaces, réel :** trois attributs de classe fixes réservent le type d'interface ROS 2 exact pour chaque objectif — `/hydra_umc/machine_state` (topic, état continu), `/hydra_umc/inspect_cell` (service, inspection courte), `/hydra_umc/execute_cell_job` (action, tâche annulable). *(implémenté)*
+* ✅ **Mappage à quatre interfaces, réel :** quatre attributs de classe fixes réservent le type d'interface ROS 2 exact pour chaque objectif — `/hydra_umc/machine_state` (topic, état continu), `/hydra_umc/inspect_cell` (service, inspection courte), `/hydra_umc/execute_cell_job` (action, tâche annulable), `/hydra_umc/request_safe_stop` (service, arrêt contrôlé). *(implémenté)*
 * ✅ **Portail de sécurité partagé, réel :** chaque tâche envoyée via `Ros2Coordinator.dispatch()` est évaluée par `evaluate_job()` du `bridge_contract` de `HYDRA-UMC-SDK`, le même portail utilisé par tous les ponts frères et HYDRA-UMC-SERVER ; une phase productive nécessite une machine externe `IDLE` et une cellule HYDRA-UMC `READY`, tandis qu'`ABORT` reste demandable pendant un défaut. *(implémenté)*
 * ✅ **Routage de phases fermé et évidence statique :** les phases productives ne se mappent que vers l'action de travail planifiée, `ABORT` se mappe vers `/hydra_umc/request_safe_stop` et une future phase SDK inconnue est refusée. `inspect_interface_plan.py` émet le plan statique de schéma `1.1` — incluant la véritable qualité de service (QoS) de durabilité `transient_local` dont le topic d'état a besoin (le propre remplacement de ROS 2 pour l'éditeur « latched » de ROS 1, documenté sur design.ros2.org/articles/qos.html) — sans importer `rclpy` ni contacter DDS. *(implémenté, testé)*
 * ✅ **Transport `rclpy` réel et partiel :** `rclpy_transport.py` connecte les 2 interfaces avec un vrai type de message ROS 2 standard dès aujourd'hui — `Ros2SafeStopClient` (un vrai client `std_srvs/Trigger`) et `Ros2StateSubscriber` (un vrai abonné `std_msgs/String`, utilisant la véritable QoS de durabilité `transient_local`). *(implémenté, testé dans `tests/test_rclpy_transport.py`)*
 * ✅ **Build/test non mutant :** `build-test.bat`/`.sh` compilent le code source et exécutent des tests unitaires déterministes sans changer la version ni le CHANGELOG. *(implémenté, voir COMPILATION & EXÉCUTION ci-dessous)*
 * 🔜 **Contrats `.srv`/`.action` personnalisés pour `inspect_service`/`job_action`** — ceux-ci n'ont pas de vrai type de message ROS 2 standard, donc un client pour eux nécessite que ce dépôt définisse d'abord son propre paquet d'interface. *(prévu)*
 * ✅ **État observé de la machine, messages retenus et clés répétées :** dès que le bridge suit le topic d'état ROS 2, la porte partagée utilise l'état rapporté par la machine au lieu du `machine_state` écrit dans le travail (un message que n'importe qui sur le broker peut publier), et une machine dont on n'a jamais eu de nouvelles compte comme OFFLINE ; `handle_message()` ignore les messages retenus (le broker les rejoue à chaque reconnexion) et, s'il reçoit un `IdempotencyStore`, répond à une `idempotency_key` répétée avec la première réponse. *(implémenté, testé dans `tests/test_intake.py`)*
+* ✅ **Une boucle de messages qui survit à son entrée, un nœud réellement tourné et un état qui peut périmer :** `handle_message()` ne lève jamais d'exception (un JSON trop gros ou très imbriqué et toute défaillance inattendue reviennent sous forme de refus) ; `cmd/job` répond avec `allowed` comme tous les autres bridges (et `accepted` comme avant) ; un travail `ABORT` dit clairement qu'il n'est qu'un plan et que l'arrêt réel est `cmd/safe_stop`. `run_forever()` fait tourner le nœud sur un fil dédié (`spin_node_in_background()`, pour que le topic d'état soit réellement livré), réutilise un unique client de service, exécute `cmd/safe_stop` sur une voie qui n'attend jamais derrière une autre commande, laisse un Last Will sur `availability`, republie l'état avec son `machine_state` normalisé et une heure `observed_at`, et refuse de démarrer si le topic d'état ROS 2 ne peut pas être souscrit ; `observed_max_age_seconds` fait compter comme OFFLINE un état qui n'est plus republié (désactivé par défaut). *(implémenté, testé avec des doublures ; jamais exécuté contre un vrai graphe ROS 2, donc le comportement de l'exécuteur et de la QoS n'est pas vérifié)*
 
 ---
 
@@ -50,8 +51,7 @@ Il appartient à la famille **External Automation Bridges** : un ensemble de dé
 flowchart LR
     ROS["Nœuds ROS 2"] -- "topic / service / action" --> BRIDGE["BRIDGE-ROS2<br/>Ros2Coordinator.dispatch()"]
     BRIDGE -- BridgeJob --> SDK["HYDRA-UMC-SDK<br/>evaluate_job()"]
-    SDK -- GateDecision --> SERVER["HYDRA-UMC-SERVER"]
-    SERVER -- "tâche / abandon" --> MCU["Sécurité MCU"]
+    SDK -- GateDecision --> BRIDGE
 ```
 
 ---
@@ -83,6 +83,7 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_mqtt_transport.py   # Tests de forme commande/état MQTT contre un client broker simulé
 │   ├── test_mqtt_environment.py # Les identifiants MQTT et le TLS de l'environnement du service atteignent le client
 │   ├── test_intake.py           # État observé, messages retenus et clés d'idempotence répétées
+│   ├── test_hardening.py        # Boucle qui survit à son entrée, rotation du nœud, état périmé, last will
 │   └── fixtures/
 │       ├── interface-plan-v1.json    # Fixture de compatibilité d'interface schema-1.0
 │       └── interface-plan-v1.1.json  # Fixture publiée de compatibilité d'interface schema-1.1
@@ -121,13 +122,13 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` compile chaque module sous `src/` avec `py_compile` et exécute la suite complète `unittest` (`tests/test_coordinator.py`) — de manière déterministe, sans installation ROS 2, sans réseau et sans changement de version/CHANGELOG. `build` exécute d'abord cette même validation et, seulement en cas de succès, appelle `tools/bump_version.py` pour synchroniser la version dans `pyproject.toml`, `hydra-umc.project.json` et `CHANGELOG.md`. Il n'existe pas encore de commande `run` matérielle réelle — cela nécessite un déploiement ROS 2 validé.
+`build-test` compile chaque module sous `src/` avec `py_compile` et exécute la suite complète `unittest` (tous les fichiers `test_*.py` de `tests/`) — de manière déterministe, sans installation ROS 2, sans réseau et sans changement de version/CHANGELOG. `build` exécute d'abord cette même validation et, seulement en cas de succès, appelle `tools/bump_version.py` pour synchroniser la version dans `pyproject.toml`, `hydra-umc.project.json` et `CHANGELOG.md`. Il n'existe pas encore de commande `run` matérielle réelle — cela nécessite un déploiement ROS 2 validé.
 
 ---
 
 ## ✅ ÉTAT ACTUEL ET PROCHAINES ÉTAPES
 
-**Réel aujourd'hui :** version `0.0.9`, fonctionnel en tant que noyau de coordination sans dépendance (`Ros2Coordinator`) avec une suite `unittest` déterministe de trente-sept tests couvrant le noyau de coordination, le transport MQTT et le transport rclpy, un routage de phases fermé, un schéma d'interface statique `plan-only` déclarant la véritable qualité de service (QoS) de durabilité `transient_local` dont le topic d'état a besoin, un transport `rclpy` réel (importé de façon paresseuse) pour les 2 interfaces avec un vrai type de message ROS 2 standard, et des scripts build-test non mutants intégrés en CI avec un checkout du SDK.
+**Réel aujourd'hui :** version `0.1.0`, fonctionnel en tant que noyau de coordination sans dépendance (`Ros2Coordinator`) avec une suite `unittest` déterministe de soixante-quatre tests couvrant le noyau de coordination, le transport MQTT et le transport rclpy, un routage de phases fermé, un schéma d'interface statique `plan-only` déclarant la véritable qualité de service (QoS) de durabilité `transient_local` dont le topic d'état a besoin, un transport `rclpy` réel (importé de façon paresseuse) pour les 2 interfaces avec un vrai type de message ROS 2 standard, et des scripts build-test non mutants intégrés en CI avec un checkout du SDK.
 
 **Frontière d'intégration :** ce pont n'est qu'une frontière de coordination — ce n'est pas un nœud de contrôle moteur, et il ne peut pas contourner HYDRA-UMC-SERVER, les limites du MCU, les watchdogs ou l'E-STOP ; chaque tâche envoyée passe toujours par le même portail partagé utilisé par tous les ponts frères.
 

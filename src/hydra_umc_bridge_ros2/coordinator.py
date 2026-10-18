@@ -146,4 +146,8 @@ class Ros2Coordinator:
             )
         # the state the machine reported on the ROS 2 state topic, when the caller has one, replaces the claim in the job (see HYDRA-UMC-SDK's evaluate_job)
         decision = evaluate_job(job, cell_state, observed_machine_state)
-        return Ros2Dispatch(decision.allowed, interface, decision.reason)
+        reason = decision.reason
+        if decision.allowed and job.phase is JobPhase.ABORT:
+            # The dispatch is plan-only: it names the stop service but never calls it.
+            reason = "abort is always accepted, but this dispatch is plan-only and sent nothing - the stop itself is the cmd/safe_stop command"
+        return Ros2Dispatch(decision.allowed, interface, reason)
