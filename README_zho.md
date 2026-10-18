@@ -15,7 +15,7 @@ GPL-3.0-or-later - see LICENSE
 ### 🔗 HYDRA-UMC 与 ROS 2 之间无依赖的协调边界
 
 <p align="center">
-  <img src="https://img.shields.io/badge/许可证-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/许可证-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="故障安全">
 </p>
@@ -128,7 +128,7 @@ bash build.sh
 
 ## ✅ 当前状态与后续步骤
 
-**目前真实的部分:** 版本 `0.1.1`,作为一个无依赖协调核心(`Ros2Coordinator`)是功能齐备的,配有覆盖协调核心、MQTT 传输层和 rclpy 传输层的六十四项确定性 `unittest` 测试套件、安全拒绝的阶段路由、声明了状态 topic 所需的真实 `transient_local` 持久性 QoS 的静态 `plan-only` 接口模式、为这 2 个接口提供真实标准 ROS 2 消息类型的真实(延迟导入的)`rclpy` 传输层,以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
+**目前真实的部分:** 版本 `0.1.2`,作为一个无依赖协调核心(`Ros2Coordinator`)是功能齐备的,配有覆盖协调核心、MQTT 传输层和 rclpy 传输层的六十四项确定性 `unittest` 测试套件、安全拒绝的阶段路由、声明了状态 topic 所需的真实 `transient_local` 持久性 QoS 的静态 `plan-only` 接口模式、为这 2 个接口提供真实标准 ROS 2 消息类型的真实(延迟导入的)`rclpy` 传输层,以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
 
 **集成边界:** 本桥接只是一个协调边界——它不是电机控制节点,也不能绕过 HYDRA-UMC-SERVER、MCU 限位、看门狗或急停;每个被派发的任务仍然要经过所有兄弟桥接使用的同一个共享门控。
 
@@ -244,4 +244,4 @@ bash build.sh
 📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
 
 ## 📜 许可证
-GPL-3.0 - 详见 LICENSE。
+GPL-3.0-or-later - 详见 LICENSE。

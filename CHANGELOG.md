@@ -6,6 +6,11 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.1.2]
+
+- Successful incremental build: synchronized package metadata and `hydra-umc.project.json`.
+- The licence is written as GPL-3.0-or-later in every header and in the package metadata.
+
 ## [0.1.1] - Maturity lowered to functional
 - Maturity is functional: the code, tests and documentation are in place, but nothing here has been verified on real hardware yet, so the manifest no longer claims the established level.
 
@@ -17,7 +22,7 @@ GPL-3.0-or-later - see LICENSE
 - **paho-mqtt callback API version 2**, `reconnect_delay_set`, and a Last Will on `hydra/bridges/ros2/availability` ("online" once connected, "offline" when the link is lost); the dependency is `paho-mqtt>=2.1,<3`.
 - **Answers.** `cmd/job` answers `allowed` as every bridge does, and `accepted` as before. An `ABORT` job no longer claims it was "forwarded to the authorised safety path": the dispatch is plan-only, and the answer says so and names `cmd/safe_stop` as the real stop.
 - **State topic.** The republished state is `{"state", "machine_state", "observed_at"}` (the raw string, the machine state it normalizes to or null, and when it was heard). `run_forever()` refuses to start when the state topic cannot be subscribed instead of refusing every job as OFFLINE without a word. A state that stops being republished can now count as OFFLINE: `observed_max_age_seconds` (off by default, since it needs a publisher that republishes on a timer). Any node of the same ROS domain can still publish on the topic: restricting that is a matter of SROS2 or DDS permissions.
-- **Documentation.** The test counts and the list of test files, the four interfaces, what is really connected, the need to spin the node and the diagram (no path to the server exists in this code) are corrected in the eight READMEs and the guide; `LICENSE` carries the full GPL-3.0 text.
+- **Documentation.** The test counts and the list of test files, the four interfaces, what is really connected, the need to spin the node and the diagram (no path to the server exists in this code) are corrected in the eight READMEs and the guide; `LICENSE` carries the full GPL-3.0-or-later text.
 - Not run against a real ROS 2 graph: the executor, the future wait and the QoS behaviour are checked against fakes only.
 - 23 new tests (64 in total); an unused import in the CI validator removed.
 
