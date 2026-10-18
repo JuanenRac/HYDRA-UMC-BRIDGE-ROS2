@@ -29,7 +29,7 @@ dependencies = [
 # run_forever() needs this, it's imported lazily (see mqtt_transport.py's
 # own comment) so the rest of the package, including every topic-dispatch
 # test, works without it installed.
-mqtt = ["paho-mqtt>=2.0,<3"]
+mqtt = ["paho-mqtt>=2.1,<3"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
