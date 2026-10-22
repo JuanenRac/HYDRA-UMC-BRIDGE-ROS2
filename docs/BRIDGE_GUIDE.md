@@ -51,7 +51,7 @@ The planned northbound/southbound boundary is for ROS 2 distributions and applic
 | Script | Purpose | Changes version/CHANGELOG? |
 |---|---|---|
 | `build-test.bat` / `build-test.sh` | Compile Python and run local tests | No |
-| `build.bat` / `build.sh` | Run the same validation, then increment the project version | Yes, after success |
+| `build.bat` / `build.sh` | Run the same validation, then build (never changes the version) | No |
 
 Set `HYDRA_UMC_SDK_ROOT` when the SDK is not a sibling checkout. Use `build-test` during development; it is the only safe default before a real ROS 2 adapter exists.
 

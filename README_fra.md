@@ -110,7 +110,7 @@ HYDRA-UMC-BRIDGE-ROS2/
 ├── images/
 │   └── HYDRA_UMC_BANNER.svg     # Bannière du README
 ├── build-test.bat / build-test.sh  # Valide uniquement, ne modifie jamais le dépôt
-├── build.bat / build.sh            # Valide puis, si succès, incrémente version + CHANGELOG
+├── build.bat / build.sh            # Valide et compile (compiler ne change jamais la version)
 ├── pyproject.toml               # Métadonnées du paquet ; dépend de HYDRA-UMC-SDK (git)
 ├── hydra-umc.project.json       # Manifeste de l'écosystème (version, maturité, famille)
 ├── CHANGELOG.md
@@ -128,7 +128,7 @@ Nécessite Python 3.11+. `tools/build_test.py` attend que `HYDRA-UMC-SDK` soit c
 ```bash
 # Windows
 build-test.bat      # validation uniquement — pas de changement de version/CHANGELOG
-build.bat            # valide puis, si succès, incrémente version + CHANGELOG
+build.bat            # Valide et compile (compiler ne change jamais la version)
 
 # Linux/macOS
 bash build-test.sh

@@ -20,24 +20,23 @@ echo * Copyright : ^(C^) 2026 JuanenRac
 echo * License   : GPL-3.0-or-later - see LICENSE
 echo * ------------------------------------------------------------------------- *
 echo * 1. Validate source and deterministic safety tests without mutation.
-echo * 2. Synchronize native version, manifest and CHANGELOG after success.
+echo * 2. Never change the version: raising it is the explicit bump command.
 echo * 3. Report the result and keep this terminal open.
 echo *******************************************************************************
 echo.
-echo [1/2] Running non-mutating build test...
+echo [1/1] Running non-mutating build test...
 where py >nul 2>&1
 if errorlevel 1 (python tools\build_test.py) else (py -3 tools\build_test.py)
 if errorlevel 1 goto :error
-echo [2/2] Incrementing synchronized project version...
 where py >nul 2>&1
-if errorlevel 1 (python tools\bump_version.py) else (py -3 tools\bump_version.py)
 if errorlevel 1 goto :error
-echo BUILD=PASS. Version, manifest and CHANGELOG were synchronized.
+for /f "usebackq delims=" %%V in (`python -c "import json; print(json.load(open(r'%~dp0hydra-umc.project.json', encoding='utf-8'))['version'])"`) do set "HYDRA_UMC_VERSION_BUILT=%%V"
+echo BUILD=PASS. Built v%HYDRA_UMC_VERSION_BUILT%. Building never changes the version; to raise it run: python tools\hydra_project_tool.py bump
 echo.
 %KEEP_OPEN%
 exit /b 0
 :error
-echo BUILD FAILED. No version increment is attempted after a failed validation.
+echo BUILD FAILED.
 echo.
 %KEEP_OPEN%
 exit /b 1
