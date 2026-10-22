@@ -144,7 +144,7 @@ class Ros2Coordinator:
                 "none",
                 "job phase is not implemented by the ROS 2 interface plan",
             )
-        # the state the machine reported on the ROS 2 state topic, when the caller has one, replaces the claim in the job (see HYDRA-UMC-SDK's evaluate_job)
+        # the state the machine reported on the ROS 2 state topic; the claim in the job is not a reading, so without it the SDK gate refuses every productive job (fail-closed)
         decision = evaluate_job(job, cell_state, observed_machine_state)
         reason = decision.reason
         if decision.allowed and job.phase is JobPhase.ABORT:

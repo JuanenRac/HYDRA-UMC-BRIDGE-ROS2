@@ -29,8 +29,13 @@ def job(phase=JobPhase.LOAD, claimed=MachineState.IDLE, key="k1"):
     return BridgeJob("job-1", key, "orchestrator", phase, claimed, {})
 
 
-def bridge(cell=CellState.READY, **kwargs):
-    return Ros2MqttBridge(Node(), lambda: cell, **kwargs)  # type: ignore[arg-type]
+def bridge(cell=CellState.READY, observed="IDLE", **kwargs):
+    # a bridge that has heard the state topic: without a reading of the machine every productive job is refused
+    b = Ros2MqttBridge(Node(), lambda: cell, **kwargs)  # type: ignore[arg-type]
+    if observed is not None:
+        b.start_observing()
+        b.observe(observed)
+    return b
 
 
 def answer(publishes):
@@ -65,15 +70,15 @@ class InterfacePlanTests(unittest.TestCase):
 class DispatchTests(unittest.TestCase):
     def test_the_abort_is_accepted_in_every_cell_state_and_goes_to_the_safe_stop_service(self):
         for cell in CellState:
-            dispatch = Ros2Coordinator().dispatch(job(JobPhase.ABORT, MachineState.FAULT), cell)
+            dispatch = Ros2Coordinator().dispatch(job(JobPhase.ABORT, MachineState.FAULT), cell, MachineState.IDLE)
             self.assertTrue(dispatch.accepted, cell)
             self.assertEqual(dispatch.interface, Ros2Coordinator.safe_stop_service)
             self.assertEqual(dispatch.mode, "plan-only")
 
     def test_productive_phases_need_a_ready_cell(self):
         for phase in (JobPhase.PREPARE, JobPhase.LOAD, JobPhase.PROCESS, JobPhase.UNLOAD, JobPhase.COMPLETE):
-            self.assertFalse(Ros2Coordinator().dispatch(job(phase), CellState.FAULT).accepted, phase)
-            self.assertEqual(Ros2Coordinator().dispatch(job(phase), CellState.READY).interface, Ros2Coordinator.job_action)
+            self.assertFalse(Ros2Coordinator().dispatch(job(phase), CellState.FAULT, MachineState.IDLE).accepted, phase)
+            self.assertEqual(Ros2Coordinator().dispatch(job(phase), CellState.READY, MachineState.IDLE).interface, Ros2Coordinator.job_action)
 
 
 class ObservedStateTests(unittest.TestCase):

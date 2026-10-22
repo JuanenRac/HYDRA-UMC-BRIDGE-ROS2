@@ -11,6 +11,7 @@ GPL-3.0-or-later - see LICENSE
 - The banner follows the animated style of the ecosystem banners, with the name, the kind and the technologies of the project.
 - Added `tools/hydra_project_tool.py`: the same `validate`, `test`, `version`, `status` and `bump` commands in every repository. The checks run with `HYDRA_UMC_CI=1` and fail if the version changes; only `bump` changes it.
 - The SDK is now fetched at a release tag instead of the main branch, so a change of the SDK cannot break this repository by itself.
+- The SDK is pinned to 0.3.6, whose gate refuses a productive job when the bridge did not read the state of its machine. The MQTT bridge passes the state heard on the ROS 2 state topic (a stale or unknown reading counts as OFFLINE), and a bridge that is not observing refuses the job instead of trusting the claim written in the job message. The tests now give the bridge a reading explicitly and check the refusal when there is none.
 
 ## [0.1.2]
 

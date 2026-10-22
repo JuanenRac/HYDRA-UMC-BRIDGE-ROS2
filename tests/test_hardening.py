@@ -33,8 +33,13 @@ def message(phase=JobPhase.LOAD, claimed=MachineState.IDLE, key="key-1"):
     return json.dumps(job_to_dict(BridgeJob("job-1", key, "orchestrator", phase, claimed, {}))).encode("utf-8")
 
 
-def bridge(cell=CellState.READY, **kwargs):
-    return Ros2MqttBridge(FakeNode(), lambda: cell, **kwargs)  # type: ignore[arg-type]
+def bridge(cell=CellState.READY, observed="IDLE", **kwargs):
+    # a bridge that has heard the state topic: without a reading of the machine every productive job is refused
+    b = Ros2MqttBridge(FakeNode(), lambda: cell, **kwargs)  # type: ignore[arg-type]
+    if observed is not None:
+        b.start_observing()
+        b.observe(observed)
+    return b
 
 
 def result(publishes):

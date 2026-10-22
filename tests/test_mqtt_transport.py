@@ -42,8 +42,13 @@ class FakeNode:
         raise AssertionError("not reachable in this environment's test run")
 
 
-def bridge(cell_state=CellState.READY):
-    return Ros2MqttBridge(FakeNode(), lambda: cell_state)
+def bridge(cell_state=CellState.READY, observed="IDLE"):
+    # a bridge that has heard the state topic: without a reading of the machine every productive job is refused
+    b = Ros2MqttBridge(FakeNode(), lambda: cell_state)
+    if observed is not None:
+        b.start_observing()
+        b.observe(observed)
+    return b
 
 
 def job(phase=JobPhase.LOAD, machine_state=MachineState.IDLE):

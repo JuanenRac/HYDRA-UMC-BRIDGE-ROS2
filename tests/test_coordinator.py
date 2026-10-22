@@ -22,15 +22,25 @@ class CoordinatorTests(unittest.TestCase):
         self.coordinator = Ros2Coordinator()
 
     def test_ready_job_uses_cancellable_action(self):
-        result = self.coordinator.dispatch(job(), CellState.READY)
+        result = self.coordinator.dispatch(job(), CellState.READY, MachineState.IDLE)
         self.assertTrue(result.accepted)
         self.assertEqual(result.interface, "/hydra_umc/execute_cell_job")
 
+    def test_a_job_is_refused_when_the_state_of_the_machine_was_not_read(self):
+        # the claim in the job message is not a reading of the machine
+        for claimed in (MachineState.IDLE, MachineState.RUNNING):
+            result = self.coordinator.dispatch(job(state=claimed), CellState.READY)
+            self.assertFalse(result.accepted)
+            self.assertIn("did not read", result.reason)
+
+    def test_an_abort_needs_no_reading_of_the_machine(self):
+        self.assertTrue(self.coordinator.dispatch(job(JobPhase.ABORT), CellState.READY).accepted)
+
     def test_busy_machine_is_not_reused(self):
-        self.assertFalse(self.coordinator.dispatch(job(state=MachineState.RUNNING), CellState.READY).accepted)
+        self.assertFalse(self.coordinator.dispatch(job(), CellState.READY, MachineState.RUNNING).accepted)
 
     def test_abort_stays_available_during_fault(self):
-        result = self.coordinator.dispatch(job(JobPhase.ABORT, MachineState.FAULT), CellState.FAULT)
+        result = self.coordinator.dispatch(job(JobPhase.ABORT, MachineState.FAULT), CellState.FAULT, MachineState.FAULT)
         self.assertTrue(result.accepted)
         self.assertEqual(result.interface, "/hydra_umc/request_safe_stop")
 
@@ -57,7 +67,7 @@ class CoordinatorTests(unittest.TestCase):
         # reads before returning) rather than a real BridgeJob the SDK
         # would now refuse to construct at all.
         unknown = SimpleNamespace(phase="SOME_FUTURE_PHASE")
-        result = self.coordinator.dispatch(unknown, CellState.READY)
+        result = self.coordinator.dispatch(unknown, CellState.READY, MachineState.IDLE)
         self.assertFalse(result.accepted)
         self.assertEqual(result.interface, "none")
 

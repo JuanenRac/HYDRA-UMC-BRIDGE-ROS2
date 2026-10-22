@@ -22,8 +22,13 @@ def message(key="key-1", claimed=MachineState.IDLE):
     return json.dumps(job_to_dict(job)).encode("utf-8")
 
 
-def bridge(cell=CellState.READY, store=None):
-    return Ros2MqttBridge(FakeNode(), lambda: cell, store)  # type: ignore[arg-type]
+def bridge(cell=CellState.READY, store=None, observed="IDLE"):
+    # a bridge that has heard the state topic: without a reading of the machine every productive job is refused
+    b = Ros2MqttBridge(FakeNode(), lambda: cell, store)  # type: ignore[arg-type]
+    if observed is not None:
+        b.start_observing()
+        b.observe(observed)
+    return b
 
 
 def accepted(publishes):
@@ -55,10 +60,13 @@ class IdempotencyTests(unittest.TestCase):
 
 
 class ObservedStateTests(unittest.TestCase):
-    def test_without_observation_the_claim_in_the_job_is_used(self):
-        b = bridge()
-        self.assertTrue(accepted(b.handle_message(f"{TOPIC_PREFIX}cmd/job", message(claimed=MachineState.IDLE))))
-        self.assertFalse(accepted(b.handle_message(f"{TOPIC_PREFIX}cmd/job", message(claimed=MachineState.RUNNING))))
+    def test_without_observation_the_job_is_refused_whatever_it_claims(self):
+        # the claim in the job message is not a reading of the machine
+        for claimed in (MachineState.IDLE, MachineState.RUNNING):
+            b = bridge(observed=None)
+            publishes = b.handle_message(f"{TOPIC_PREFIX}cmd/job", message(claimed=claimed))
+            self.assertFalse(accepted(publishes))
+            self.assertIn("did not read", json.loads(publishes[0].payload)["reason"])
 
     def test_once_observing_the_reported_state_beats_the_claim(self):
         b = bridge()
