@@ -15,7 +15,7 @@ description = "Fail-safe HYDRA-UMC to ROS 2 coordination boundary"
 requires-python = ">=3.11"
 license = {text = "GPL-3.0-or-later"}
 dependencies = [
-  "hydra-umc-sdk @ git+https://github.com/JuanenRac/HYDRA-UMC-SDK.git@v0.3.5#subdirectory=clients/python"
+  "hydra-umc-sdk @ git+https://github.com/JuanenRac/HYDRA-UMC-SDK.git@v0.3.6#subdirectory=clients/python"
 ]
 
 # rclpy/std_srvs/std_msgs are NOT declared as a pip extra here (unlike this
