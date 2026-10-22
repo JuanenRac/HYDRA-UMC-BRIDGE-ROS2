@@ -6,6 +6,11 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [Unreleased]
+
+- Added `tools/hydra_project_tool.py`: the same `validate`, `test`, `version`, `status` and `bump` commands in every repository. The checks run with `HYDRA_UMC_CI=1` and fail if the version changes; only `bump` changes it.
+- The SDK is now fetched at a release tag instead of the main branch, so a change of the SDK cannot break this repository by itself.
+
 ## [0.1.2]
 
 - Successful incremental build: synchronized package metadata and `hydra-umc.project.json`.
