@@ -50,13 +50,13 @@ from __future__ import annotations
 import json
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from typing import Callable
 
 from hydra_umc_sdk.bridge_contract import BridgeError, CellState, MachineState, job_from_dict
 from hydra_umc_sdk.job_intake import IdempotencyStore
-from hydra_umc_sdk.mqtt_connection import apply_connection_settings, settings_from_env
+from hydra_umc_sdk.bridge_transport import MessageDispatcher as SharedMessageDispatcher
+from hydra_umc_sdk.bridge_transport import MqttPublish, connect_with_retry, open_bridge_client
 
 from .coordinator import Ros2Coordinator, Ros2Dispatch
 from .rclpy_transport import Ros2Node, Ros2SafeStopClient, Ros2StateSubscriber, SubscribeResult, spin_node_in_background
@@ -90,26 +90,6 @@ def state_payload(state: str, observed_at_ms: int) -> str:
     except ValueError:
         machine_state = None
     return json.dumps({"state": state, "machine_state": machine_state, "observed_at": observed_at_ms})
-
-
-class MqttPublish:
-    """One real outbound MQTT publish this module decided to make."""
-
-    __slots__ = ("topic", "payload", "retain")
-
-    def __init__(self, topic: str, payload: str, retain: bool = False) -> None:
-        self.topic = topic
-        self.payload = payload
-        self.retain = retain
-
-    def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, MqttPublish)
-            and (self.topic, self.payload, self.retain) == (other.topic, other.payload, other.retain)
-        )
-
-    def __repr__(self) -> str:  # pragma: no cover - debugging aid only
-        return f"MqttPublish(topic={self.topic!r}, payload={self.payload!r}, retain={self.retain!r})"
 
 
 class Ros2MqttBridge:
@@ -240,37 +220,7 @@ def bridge_state_to_mqtt(
     return Ros2StateSubscriber().subscribe(node, Ros2Coordinator.state_topic, on_state)
 
 
-def connect_with_retry(
-    connect,
-    *,
-    max_attempts: int = 5,
-    retry_delay_seconds: float = 2.0,
-    sleep=time.sleep,
-) -> None:
-    """Retries `connect()` on OSError (what an unreachable broker actually
-    raises - connection refused, timeout), tolerating the real startup
-    race a systemd unit for this bridge hits if it starts before
-    HYDRA-UMC-MQTT-BROKER is listening yet (both are independent systemd
-    units with no ordering guarantee across a real reboot). Only OSError is retried;
-    anything else is a real bug, not a transient startup race, and
-    propagates immediately. `sleep` is injectable so tests can prove the
-    retry/give-up behavior without a real multi-second wait."""
-    last_error: OSError | None = None
-    for attempt in range(1, max_attempts + 1):
-        try:
-            connect()
-            return
-        except OSError as error:
-            last_error = error
-            if attempt < max_attempts:
-                sleep(retry_delay_seconds)
-    raise RuntimeError(
-        f"could not reach the MQTT broker after {max_attempts} attempts "
-        f"({retry_delay_seconds}s apart): {last_error}"
-    ) from last_error
-
-
-class MessageDispatcher:
+class MessageDispatcher(SharedMessageDispatcher):
     """Takes the messages off the network thread.
 
     A safe-stop call waits for the ROS 2 service (up to its timeout); doing that
@@ -279,30 +229,8 @@ class MessageDispatcher:
     commands (`STOP_VERBS`) run on a second lane so they never wait behind one.
     """
 
-    def __init__(self, bridge: Ros2MqttBridge, stop_verbs: frozenset[str] = STOP_VERBS) -> None:
-        self._bridge = bridge
-        self._stop_verbs = frozenset(stop_verbs)
-        self._lane = ThreadPoolExecutor(max_workers=1, thread_name_prefix="hydra-bridge")
-        self._stop_lane = ThreadPoolExecutor(max_workers=1, thread_name_prefix="hydra-bridge-stop")
-
-    def on_message(self, client: object, userdata: object, message: object) -> None:
-        if bool(getattr(message, "retain", False)):
-            return  # a replay by the broker, never a request
-        topic = message.topic  # type: ignore[attr-defined]
-        suffix = topic[len(TOPIC_PREFIX) :] if topic.startswith(TOPIC_PREFIX) else ""
-        lane = self._stop_lane if suffix in self._stop_verbs else self._lane
-        lane.submit(self._handle, client, topic, bytes(message.payload))  # type: ignore[attr-defined]
-
-    def _handle(self, client: object, topic: str, payload: bytes) -> None:
-        try:
-            for publish in self._bridge.handle_message(topic, payload, retained=False):
-                client.publish(publish.topic, publish.payload, retain=publish.retain)  # type: ignore[attr-defined]
-        except Exception:  # noqa: BLE001
-            _LOG.exception("could not answer %s", topic)
-
-    def close(self, wait: bool = True) -> None:
-        self._lane.shutdown(wait=wait)
-        self._stop_lane.shutdown(wait=wait)
+    def __init__(self, bridge: object, stop_verbs: frozenset[str] = STOP_VERBS) -> None:
+        super().__init__(bridge, TOPIC_PREFIX, stop_verbs)  # type: ignore[arg-type]
 
 
 def run_forever(
@@ -339,34 +267,19 @@ def run_forever(
     if password is not None and username is None:
         raise ValueError("password was given without a username - MQTT credentials need both")
 
-    try:
-        import paho.mqtt.client as mqtt  # type: ignore[import-untyped]
-    except ImportError as error:
-        raise RuntimeError(
-            "paho-mqtt is not installed - install it to connect to a real HYDRA-UMC-MQTT-BROKER "
-            "(this module's topic-dispatch/gating logic works and is tested without it)"
-        ) from error
-
-    def on_connect(client: object, userdata: object, flags: object, reason_code: object, properties: object = None) -> None:
-        if getattr(reason_code, "is_failure", False):
-            return  # the broker refused us: paho reports it and retries on its own
-        client.subscribe(f"{TOPIC_PREFIX}cmd/#")  # type: ignore[attr-defined]
-        client.publish(AVAILABILITY_TOPIC, "online", qos=1, retain=True)  # type: ignore[attr-defined]
-
     dispatcher = MessageDispatcher(bridge)
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id)
-    # the credentials and TLS of this service's environment (HYDRA_MQTT_*), unless the caller gave a user name explicitly
-    apply_connection_settings(client, settings_from_env(), username=username, password=password)
-    client.reconnect_delay_set(min_delay=1, max_delay=30)
-    client.will_set(AVAILABILITY_TOPIC, "offline", qos=1, retain=True)
-    client.on_connect = on_connect
-    client.on_message = dispatcher.on_message
     spinner = None
     try:
-        connect_with_retry(
-            lambda: client.connect(host, port),
-            max_attempts=max_connect_attempts,
-            retry_delay_seconds=connect_retry_delay_seconds,
+        client = open_bridge_client(
+            host,
+            port,
+            client_id=client_id,
+            topic_prefix=TOPIC_PREFIX,
+            dispatcher=dispatcher,
+            username=username,
+            password=password,
+            max_connect_attempts=max_connect_attempts,
+            connect_retry_delay_seconds=connect_retry_delay_seconds,
         )
         spinner = spin_node_in_background(bridge.node)
         bridge.start_observing()   # from here the gate has a machine state to use: the one the ROS 2 topic reports (without it the job is refused)
