@@ -142,7 +142,7 @@ class Ros2MqttBridge:
         self._observed_at = 0.0
         # docs/BRIDGE_CONTRACT.md: the idempotency key of a job is handled once; a repeat gets the answer that was given
         self._idempotency = idempotency
-        # The machine state as the ROS 2 state topic reports it. Until `start_observing()` the gate falls back to the claim inside the job; once observing, a machine whose state
+        # The machine state as the ROS 2 state topic reports it. Before `start_observing()` nothing has been read and the gate refuses the job; once observing, a machine whose state
         # was never heard (or is not a known state) counts as OFFLINE, so nothing productive is forwarded on a claim.
         self._observing = False
         self._observed: MachineState | None = None
@@ -369,7 +369,7 @@ def run_forever(
             retry_delay_seconds=connect_retry_delay_seconds,
         )
         spinner = spin_node_in_background(bridge.node)
-        bridge.start_observing()   # from here the gate uses the machine state the ROS 2 topic reports, not the claim inside a job
+        bridge.start_observing()   # from here the gate has a machine state to use: the one the ROS 2 topic reports (without it the job is refused)
         subscribed = bridge_state_to_mqtt(bridge.node, lambda topic, payload, retain: client.publish(topic, payload, retain=retain), bridge.observe)
         if not subscribed.subscribed:
             raise RuntimeError(f"the ROS 2 state topic cannot be observed: {subscribed.reason}")
