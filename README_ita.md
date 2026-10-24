@@ -110,14 +110,19 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_mqtt_environment.py # Le credenziali MQTT e il TLS dell'ambiente del servizio arrivano al client
 │   ├── test_intake.py           # Stato osservato, messaggi trattenuti e chiavi di idempotenza ripetute
 │   ├── test_hardening.py        # Ciclo che sopravvive ai propri input, rotazione del nodo, stato vecchio, last will
-│   └── fixtures/
-│       ├── interface-plan-v1.json    # Fixture di compatibilità interfaccia schema-1.0
-│       └── interface-plan-v1.1.json  # Fixture pubblica di compatibilità interfaccia schema-1.1
+│   ├── fixtures/
+│   │   ├── interface-plan-v1.json    # Fixture di compatibilità interfaccia schema-1.0
+│   │   └── interface-plan-v1.1.json  # Fixture pubblica di compatibilità interfaccia schema-1.1
+│   └── test_edge_cases.py        # Validazione del piano delle interfacce, stato obsoleto, instradamento dell'arresto sicuro e casi limite del payload
 ├── tools/
 │   ├── build_test.py            # Compilatore + esecutore di test non mutante (build-test.bat/.sh)
 │   ├── inspect_interface_plan.py # Emette il JSON statico `plan-only` dello schema di interfaccia 1.1
 │   ├── ci_validate.py           # Base CI priva di dipendenze e non distruttiva (usata da .github/workflows/ci.yml)
-│   └── bump_version.py          # Sincronizza pyproject.toml, manifesto e CHANGELOG.md
+│   ├── bump_version.py          # Sincronizza pyproject.toml, manifesto e CHANGELOG.md
+│   ├── _doc_policy.py           # Regole di documentazione condivise dalla famiglia (copia di quella di HYDRA-UMC-SDK, mantenuta sincronizzata)
+│   ├── _readme_parity.py        # Verifica che gli otto README abbiano la stessa struttura (copia di quella di HYDRA-UMC-SDK, mantenuta sincronizzata)
+│   ├── hydra_project_tool.py    # Gli stessi comandi in ogni repository: validate, test, ci, version, status, bump
+│   └── extra_build_steps.py     # I passi di compilazione propri di questo repository oltre al test di compilazione condiviso (i suoi unit test)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Ambito, piattaforme compatibili, script, porta di accettazione hardware
 ├── images/

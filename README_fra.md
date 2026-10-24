@@ -110,14 +110,19 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_mqtt_environment.py # Les identifiants MQTT et le TLS de l'environnement du service atteignent le client
 │   ├── test_intake.py           # État observé, messages retenus et clés d'idempotence répétées
 │   ├── test_hardening.py        # Boucle qui survit à son entrée, rotation du nœud, état périmé, last will
-│   └── fixtures/
-│       ├── interface-plan-v1.json    # Fixture de compatibilité d'interface schema-1.0
-│       └── interface-plan-v1.1.json  # Fixture publiée de compatibilité d'interface schema-1.1
+│   ├── fixtures/
+│   │   ├── interface-plan-v1.json    # Fixture de compatibilité d'interface schema-1.0
+│   │   └── interface-plan-v1.1.json  # Fixture publiée de compatibilité d'interface schema-1.1
+│   └── test_edge_cases.py        # Validation du plan d'interfaces, état périmé, routage de l'arrêt sûr et cas limites de la charge utile
 ├── tools/
 │   ├── build_test.py            # Compilateur + lanceur de tests non mutant (build-test.bat/.sh)
 │   ├── inspect_interface_plan.py # Émet le JSON statique `plan-only` du schéma d'interface 1.1
 │   ├── ci_validate.py           # Base CI sans dépendances et non destructive (utilisée par .github/workflows/ci.yml)
-│   └── bump_version.py          # Synchronise pyproject.toml, manifeste et CHANGELOG.md
+│   ├── bump_version.py          # Synchronise pyproject.toml, manifeste et CHANGELOG.md
+│   ├── _doc_policy.py           # Règles de documentation partagées par la famille (copie de celle de HYDRA-UMC-SDK, tenue synchronisée)
+│   ├── _readme_parity.py        # Contrôle que les huit README partagent la même structure (copie de celui de HYDRA-UMC-SDK, tenue synchronisée)
+│   ├── hydra_project_tool.py    # Les mêmes commandes dans chaque dépôt : validate, test, ci, version, status, bump
+│   └── extra_build_steps.py     # Les étapes de compilation propres à ce dépôt en plus du test de compilation partagé (ses tests unitaires)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Portée, plateformes compatibles, scripts, portail d'acceptation matérielle
 ├── images/

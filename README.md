@@ -110,14 +110,19 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_mqtt_environment.py # The MQTT credentials and TLS of the service environment reach the client
 │   ├── test_intake.py           # Observed state, retained messages and repeated idempotency keys
 │   ├── test_hardening.py        # A loop that survives its input, node spinning, stale state, last will
-│   └── fixtures/
-│       ├── interface-plan-v1.json    # Schema-1.0 interface compatibility fixture
-│       └── interface-plan-v1.1.json  # Published schema-1.1 interface compatibility fixture
+│   ├── fixtures/
+│   │   ├── interface-plan-v1.json    # Schema-1.0 interface compatibility fixture
+│   │   └── interface-plan-v1.1.json  # Published schema-1.1 interface compatibility fixture
+│   └── test_edge_cases.py        # Interface plan validation, stale state, safe-stop routing and payload edge cases
 ├── tools/
 │   ├── build_test.py            # Non-mutating compile + test runner (build-test.bat/.sh)
 │   ├── inspect_interface_plan.py # Emits the static, plan-only schema-1.1 interface JSON
 │   ├── ci_validate.py           # Dependency-free, non-destructive CI baseline (used by .github/workflows/ci.yml)
-│   └── bump_version.py          # Synchronizes pyproject.toml, manifest and CHANGELOG.md
+│   ├── bump_version.py          # Synchronizes pyproject.toml, manifest and CHANGELOG.md
+│   ├── _doc_policy.py           # Documentation rules shared by the family (a copy of HYDRA-UMC-SDK's, kept in sync)
+│   ├── _readme_parity.py        # Check that the eight READMEs share one structure (a copy of HYDRA-UMC-SDK's, kept in sync)
+│   ├── hydra_project_tool.py    # The same commands in every repository: validate, test, ci, version, status, bump
+│   └── extra_build_steps.py     # The build steps of this repository beyond the shared build test (its own unit tests)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Scope, compatible platforms, scripts, hardware acceptance gate
 ├── images/

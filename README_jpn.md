@@ -110,14 +110,19 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_mqtt_environment.py # サービス環境の MQTT 認証情報と TLS がクライアントに届く
 │   ├── test_intake.py           # 観測した状態、保持メッセージ、重複した冪等キー
 │   ├── test_hardening.py        # 入力に耐えるループ、ノードの回転、古い状態、last will
-│   └── fixtures/
-│       ├── interface-plan-v1.json    # schema-1.0 インターフェース互換性フィクスチャ
-│       └── interface-plan-v1.1.json  # 公開 schema-1.1 インターフェース互換性フィクスチャ
+│   ├── fixtures/
+│   │   ├── interface-plan-v1.json    # schema-1.0 インターフェース互換性フィクスチャ
+│   │   └── interface-plan-v1.1.json  # 公開 schema-1.1 インターフェース互換性フィクスチャ
+│   └── test_edge_cases.py        # インターフェース計画の検証、古い状態、安全停止のルーティング、ペイロードの境界ケース
 ├── tools/
 │   ├── build_test.py            # 非破壊的なコンパイル+テストランナー (build-test.bat/.sh)
 │   ├── inspect_interface_plan.py # 静的な plan-only スキーマ1.1インターフェースJSONを出力
 │   ├── ci_validate.py           # 依存関係なし・非破壊のCIベースライン (.github/workflows/ci.yml が使用)
-│   └── bump_version.py          # pyproject.toml、マニフェスト、CHANGELOG.md を同期
+│   ├── bump_version.py          # pyproject.toml、マニフェスト、CHANGELOG.md を同期
+│   ├── _doc_policy.py           # ファミリー共通のドキュメント規則 (HYDRA-UMC-SDK のコピーで、同期を維持)
+│   ├── _readme_parity.py        # 8つの README が同じ構造であることの検査 (HYDRA-UMC-SDK のコピーで、同期を維持)
+│   ├── hydra_project_tool.py    # すべてのリポジトリで共通のコマンド: validate、test、ci、version、status、bump
+│   └── extra_build_steps.py     # 共通のビルドテストに加えた、このリポジトリ固有のビルド手順 (独自のユニットテスト)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # 適用範囲、対応プラットフォーム、スクリプト、ハードウェア受け入れゲート
 ├── images/

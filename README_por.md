@@ -109,14 +109,19 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_mqtt_environment.py # As credenciais MQTT e o TLS do ambiente do serviço chegam ao cliente
 │   ├── test_intake.py           # Estado observado, mensagens retidas e chaves de idempotência repetidas
 │   ├── test_hardening.py        # Ciclo que sobrevive à sua entrada, rotação do nó, estado caducado, last will
-│   └── fixtures/
-│       ├── interface-plan-v1.json    # Fixture de compatibilidade de interface do esquema 1.0
-│       └── interface-plan-v1.1.json  # Fixture publicada de compatibilidade de interface do esquema 1.1
+│   ├── fixtures/
+│   │   ├── interface-plan-v1.json    # Fixture de compatibilidade de interface do esquema 1.0
+│   │   └── interface-plan-v1.1.json  # Fixture publicada de compatibilidade de interface do esquema 1.1
+│   └── test_edge_cases.py        # Validação do plano de interfaces, estado desatualizado, encaminhamento da paragem segura e casos-limite da carga útil
 ├── tools/
 │   ├── build_test.py            # Executor de compilação + testes que não altera nada (build-test.bat/.sh)
 │   ├── inspect_interface_plan.py # Emite o JSON estático e só de plano da interface do esquema 1.1
 │   ├── ci_validate.py           # Base de CI sem dependências e não destrutiva (usada por .github/workflows/ci.yml)
-│   └── bump_version.py          # Sincroniza pyproject.toml, o manifesto e CHANGELOG.md
+│   ├── bump_version.py          # Sincroniza pyproject.toml, o manifesto e CHANGELOG.md
+│   ├── _doc_policy.py           # Regras de documentação partilhadas pela família (cópia da de HYDRA-UMC-SDK, mantida em sincronia)
+│   ├── _readme_parity.py        # Verificação de que os oito README partilham a mesma estrutura (cópia da de HYDRA-UMC-SDK, mantida em sincronia)
+│   ├── hydra_project_tool.py    # Os mesmos comandos em todos os repositórios: validate, test, ci, version, status, bump
+│   └── extra_build_steps.py     # Os passos de compilação próprios deste repositório além do teste de compilação partilhado (os seus testes unitários)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Âmbito, plataformas compatíveis, scripts, porta de aceitação de hardware
 ├── images/

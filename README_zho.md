@@ -110,14 +110,19 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_mqtt_environment.py # 服务环境中的 MQTT 凭据和 TLS 会传到客户端
 │   ├── test_intake.py           # 观测状态、保留消息与重复幂等键
 │   ├── test_hardening.py        # 能承受输入的循环、节点转动、过期状态、last will
-│   └── fixtures/
-│       ├── interface-plan-v1.json    # schema-1.0 接口兼容性 fixture
-│       └── interface-plan-v1.1.json  # 已发布的 schema-1.1 接口兼容性 fixture
+│   ├── fixtures/
+│   │   ├── interface-plan-v1.json    # schema-1.0 接口兼容性 fixture
+│   │   └── interface-plan-v1.1.json  # 已发布的 schema-1.1 接口兼容性 fixture
+│   └── test_edge_cases.py        # 接口计划校验、过期状态、安全停止路由和载荷边界情况
 ├── tools/
 │   ├── build_test.py            # 非变更式编译 + 测试运行器 (build-test.bat/.sh)
 │   ├── inspect_interface_plan.py # 输出静态的 plan-only 1.1 版接口模式 JSON
 │   ├── ci_validate.py           # 无依赖、非破坏性的CI基线检查 (由 .github/workflows/ci.yml 使用)
-│   └── bump_version.py          # 同步 pyproject.toml、清单和 CHANGELOG.md
+│   ├── bump_version.py          # 同步 pyproject.toml、清单和 CHANGELOG.md
+│   ├── _doc_policy.py           # 家族共享的文档规则 (HYDRA-UMC-SDK 的副本,保持同步)
+│   ├── _readme_parity.py        # 检查八个 README 结构一致 (HYDRA-UMC-SDK 的副本,保持同步)
+│   ├── hydra_project_tool.py    # 每个仓库相同的命令: validate、test、ci、version、status、bump
+│   └── extra_build_steps.py     # 除共享构建测试外,本仓库自己的构建步骤 (自带的单元测试)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # 范围、兼容平台、脚本、硬件验收门控
 ├── images/

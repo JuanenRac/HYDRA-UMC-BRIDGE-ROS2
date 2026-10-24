@@ -110,14 +110,19 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── test_mqtt_environment.py # Die MQTT-Zugangsdaten und TLS der Dienstumgebung erreichen den Client
 │   ├── test_intake.py           # Beobachteter Zustand, zurückgehaltene Nachrichten und wiederholte Idempotenzschlüssel
 │   ├── test_hardening.py        # Schleife, die ihre Eingaben übersteht, Knoten drehen, veralteter Zustand, Last Will
-│   └── fixtures/
-│       ├── interface-plan-v1.json    # Schema-1.0-Interface-Kompatibilitätsfixture
-│       └── interface-plan-v1.1.json  # Veröffentlichtes Schema-1.1-Interface-Kompatibilitätsfixture
+│   ├── fixtures/
+│   │   ├── interface-plan-v1.json    # Schema-1.0-Interface-Kompatibilitätsfixture
+│   │   └── interface-plan-v1.1.json  # Veröffentlichtes Schema-1.1-Interface-Kompatibilitätsfixture
+│   └── test_edge_cases.py        # Prüfung des Schnittstellenplans, veralteter Zustand, Routing des sicheren Stopps und Randfälle der Nutzlast
 ├── tools/
 │   ├── build_test.py            # Nicht-mutierender Compiler + Testläufer (build-test.bat/.sh)
 │   ├── inspect_interface_plan.py # Gibt das statische `plan-only`-JSON des Schnittstellenschemas 1.1 aus
 │   ├── ci_validate.py           # Abhängigkeitsfreie, nicht-destruktive CI-Basislinie (verwendet von .github/workflows/ci.yml)
-│   └── bump_version.py          # Synchronisiert pyproject.toml, Manifest und CHANGELOG.md
+│   ├── bump_version.py          # Synchronisiert pyproject.toml, Manifest und CHANGELOG.md
+│   ├── _doc_policy.py           # Von der Familie geteilte Dokumentationsregeln (Kopie der von HYDRA-UMC-SDK, synchron gehalten)
+│   ├── _readme_parity.py        # Prüfung, dass die acht READMEs dieselbe Struktur haben (Kopie der von HYDRA-UMC-SDK, synchron gehalten)
+│   ├── hydra_project_tool.py    # Dieselben Befehle in jedem Repository: validate, test, ci, version, status, bump
+│   └── extra_build_steps.py     # Die eigenen Build-Schritte dieses Repositorys neben dem gemeinsamen Build-Test (seine Unit-Tests)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Umfang, kompatible Plattformen, Skripte, Hardware-Abnahmegatter
 ├── images/
