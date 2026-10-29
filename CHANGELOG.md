@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **README in the universal layout:** the README and its seven translations follow the layout that the four families share (22 sections in a fixed order), with an architecture picture and a repository-structure picture drawn from `docs/architecture.json` and `docs/structure.json`; the CI validator checks both pictures and the file tree. Where the repository has a service or an MQTT transport, the README now says how to start it and which environment variables it reads.
+
 - **The layout of the README is checked in the CI:** the validator runs `tools/universal_readme_check.py` and lists, as a warning, what differs from the universal layout of the README.
 
 ## [0.1.3] - The MQTT transport comes from the SDK
@@ -15,9 +17,6 @@ All notable changes to this project are documented here.
 - Added `tools/hydra_project_tool.py`: the same `validate`, `test`, `version`, `status` and `bump` commands in every repository. The checks run with `HYDRA_UMC_CI=1` and fail if the version changes; only `bump` changes it.
 - The SDK is now fetched at a release tag instead of the main branch, so a change of the SDK cannot break this repository by itself.
 - The SDK is pinned to 0.3.6, whose gate refuses a productive job when the bridge did not read the state of its machine. The MQTT bridge passes the state heard on the ROS 2 state topic (a stale or unknown reading counts as OFFLINE), and a bridge that is not observing refuses the job instead of trusting the claim written in the job message. The tests now give the bridge a reading explicitly and check the refusal when there is none.
-
-## [0.1.3]
-
 - Successful incremental build: synchronized package metadata and `hydra-umc.project.json`.
 
 ## [0.1.2]
@@ -26,6 +25,7 @@ All notable changes to this project are documented here.
 - The licence is written as GPL-3.0-or-later in every header and in the package metadata.
 
 ## [0.1.1] - Maturity lowered to functional
+
 - Maturity is functional: the code, tests and documentation are in place, but nothing here has been verified on real hardware yet, so the manifest no longer claims the established level.
 
 ## [0.1.0] - A node that is really spun, a loop that survives its input and honest answers

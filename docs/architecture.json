@@ -1,0 +1,114 @@
+{
+  "repo": "HYDRA-UMC-BRIDGE-ROS2",
+  "ecosystem": "hydra",
+  "tagline": "A cell job becomes a named ROS 2 interface under /hydra_umc/, never raw motion, once the gate says yes.",
+  "description": "HYDRA-UMC-BRIDGE-ROS2 maps a correlated cell job onto the kind of ROS 2 interface it needs, with a name that must start with /hydra_umc/, asks the shared evaluate_job gate of HYDRA-UMC-SDK and reaches ROS 2 through two standard-typed rclpy interfaces: a state subscriber and a safe-stop service client. MQTT carries the commands and the answers.",
+  "columns": [
+    "WHO COMMANDS IT",
+    "THIS REPOSITORY",
+    "WHAT IT DEPENDS ON"
+  ],
+  "nodes": [
+    {
+      "id": "broker",
+      "column": 0,
+      "level": "external",
+      "title": "HYDRA-UMC-MQTT-BROKER",
+      "lines": [
+        "carries cmd/job and",
+        "cmd/safe_stop"
+      ],
+      "title_size": 12
+    },
+    {
+      "id": "sdk",
+      "column": 0,
+      "level": "contract",
+      "title": "HYDRA-UMC-SDK",
+      "lines": [
+        "evaluate_job(): the gate",
+        "every bridge shares"
+      ]
+    },
+    {
+      "id": "mqtt",
+      "column": 1,
+      "level": "tested",
+      "title": "mqtt_transport.py",
+      "lines": [
+        "Ros2MqttBridge: cmd/job and",
+        "cmd/safe_stop; state"
+      ],
+      "code": [
+        "src/hydra_umc_bridge_ros2/mqtt_transport.py::class Ros2MqttBridge"
+      ]
+    },
+    {
+      "id": "coord",
+      "column": 1,
+      "level": "contract",
+      "title": "coordinator.py",
+      "lines": [
+        "Ros2Coordinator: job to an",
+        "interface under /hydra_umc/"
+      ],
+      "code": [
+        "src/hydra_umc_bridge_ros2/coordinator.py::/hydra_umc/"
+      ]
+    },
+    {
+      "id": "rclpy",
+      "column": 1,
+      "level": "config",
+      "title": "rclpy_transport.py",
+      "lines": [
+        "state subscriber and safe-stop",
+        "client, transient_local QoS"
+      ],
+      "code": [
+        "src/hydra_umc_bridge_ros2/rclpy_transport.py::TRANSIENT_LOCAL"
+      ]
+    },
+    {
+      "id": "ros",
+      "column": 2,
+      "level": "untested",
+      "title": "ROS 2 graph",
+      "lines": [
+        "never run against a real ROS 2",
+        "installation"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "broker",
+      "to": "mqtt",
+      "label": "cmd/job",
+      "level": "tested"
+    },
+    {
+      "from": "sdk",
+      "to": "coord",
+      "label": "gate",
+      "level": "contract"
+    },
+    {
+      "from": "mqtt",
+      "to": "coord",
+      "level": "tested"
+    },
+    {
+      "from": "coord",
+      "to": "rclpy",
+      "level": "tested"
+    },
+    {
+      "from": "rclpy",
+      "to": "ros",
+      "label": "rclpy",
+      "level": "untested"
+    }
+  ],
+  "footer": "rclpy is imported lazily and was replaced by a stand-in in every test; no real ROS 2 installation was used."
+}

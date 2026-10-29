@@ -1,32 +1,35 @@
 <!-- =============================================================================
-HYDRA-UMC-BRIDGE-ROS2 - ROS 2 双向协调桥接
-Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+HYDRA-UMC-BRIDGE-ROS2 - ROS 2 coordination bridge
+Copyright (C) JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
 GPL-3.0-or-later - see LICENSE
 ============================================================================= -->
 
 <p align="center">
-  <img src="images/HYDRA_UMC_BANNER.svg" alt="HYDRA-UMC-BRIDGE-ROS2 横幅" width="100%">
+  <img src="images/HYDRA_UMC_BANNER.svg" alt="HYDRA-UMC-BRIDGE-ROS2 banner" width="100%">
 </p>
 
-# 🤖 HYDRA-UMC-BRIDGE-ROS2
+# 🐢 HYDRA-UMC-BRIDGE-ROS2
 
 <p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | 🇨🇳 <b>简体中文</b> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 🔗 HYDRA-UMC 与 ROS 2 之间无依赖的协调边界
 
 <p align="center">
-  <img src="https://img.shields.io/badge/许可证-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
-  <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python 3.11+">
-  <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="故障安全">
+  <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
+  <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
+  <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
+  <img src="https://img.shields.io/badge/Tests-81%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.1.3-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-> **诚实检查——今天真正可运行的部分：** 无依赖的协调核心（`coordinator.py` 中的 `Ros2Coordinator`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）、面向 `std_srvs/Trigger` 和 `std_msgs/String` 的真实（延迟导入的）`rclpy` 传输层（`rclpy_transport.py` 中的 `Ros2SafeStopClient`/`Ros2StateSubscriber`），以及 MQTT 命令/状态传输（`mqtt_transport.py`）都是真实的，并由 64 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。以上这些都从未针对真实的 ROS 2 安装、真实的 DDS 网络或真实的 MQTT broker 进行过验证——`test_rclpy_transport.py` 是针对一个伪造的节点/发布者运行的，`test_mqtt_transport.py` 是针对一个伪造的 broker 客户端运行的，因此这些测试甚至不需要安装 `rclpy`/`std_srvs`/`std_msgs` 就能通过。自定义的 `.srv`/`.action` 契约 `inspect_service`/`job_action` 目前仍然没有真实的标准 ROS 2 消息类型，也完全没有客户端。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。
-
----
+> **诚实检查——今天真正可运行的部分：** 无依赖的协调核心（`coordinator.py` 中的 `Ros2Coordinator`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）、面向 `std_srvs/Trigger` 和 `std_msgs/String` 的真实（延迟导入的）`rclpy` 传输层（`rclpy_transport.py` 中的 `Ros2SafeStopClient`/`Ros2StateSubscriber`），以及 MQTT 命令/状态传输（`mqtt_transport.py`）都是真实的，并由 81 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。以上这些都从未针对真实的 ROS 2 安装、真实的 DDS 网络或真实的 MQTT broker 进行过验证——`test_rclpy_transport.py` 是针对一个伪造的节点/发布者运行的，`test_mqtt_transport.py` 是针对一个伪造的 broker 客户端运行的，因此这些测试甚至不需要安装 `rclpy`/`std_srvs`/`std_msgs` 就能通过。自定义的 `.srv`/`.action` 契约 `inspect_service`/`job_action` 目前仍然没有真实的标准 ROS 2 消息类型，也完全没有客户端。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。
 
 > **安全与安防现状:**本生态系统不是经认证的安全系统。目前尚无硬件 E-STOP 通路,没有由固件强制执行的限位或联锁,也没有经过验证的运动指令;固件映像使用 CRC32 和共享密钥的 HMAC-SHA256 校验,而非非对称签名;TLS 与双向 TLS 均为可选项,默认关闭;自制电路板尚未组装或测试。在依赖此处任何说法来保障人身安全之前,请先阅读[安全基线](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)和[威胁模型](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)。
+
+---
 
 ## 📋 速览
 
@@ -34,10 +37,12 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | 版本 | `0.1.3` |
 | 成熟度 | 可用 |
-| 测试 | 64 (`python tools/build_test.py`) |
+| 测试 | 81 (`python tools/build_test.py`) |
 | 技术栈 | Python / ROS 2 / rclpy / HYDRA-UMC-SDK |
 | 目标 | HYDRA-UMC 工作单元的 Raspberry Pi CM5 |
 | 真实硬件 | 仅模拟：使用模拟器、替身或仿真测试；此版本没有在真实硬件上运行的记录 |
+
+**跳转：** [概述](#-概述) · [架构](#-架构) · [功能](#-功能) · [安全与防护](#-安全与防护) · [接口](#-接口) · [配置](#-配置) · [快速开始](#-快速开始) · [测试](#-测试) · [故障排除](#-故障排除) · [仓库结构](#-仓库结构) · [相关项目](#-相关项目)
 
 ## 🚦 项目状态
 
@@ -48,30 +53,30 @@ GPL-3.0-or-later - see LICENSE
 | 领域 | 状态 | 在这里的含义 |
 |---|---|---|
 | 软件 | 🟡 | 主要用途可用；上面的诚实性检查列出了仍然缺少的内容 |
-| 测试 | 🟢 | 64 项自动测试，每次变更都会运行 |
+| 测试 | 🟢 | 81 项自动测试，每次变更都会运行 |
 | 真实硬件 | 🟠 | 仅模拟：使用模拟器、替身或仿真测试；此版本没有在真实硬件上运行的记录 |
 | 文档 | 🟢 | 八种语言的 README，每次变更都会与清单核对 |
 
-## 1. 🛠️ 技术概览
+## 🎯 概述
 
 **HYDRA-UMC-BRIDGE-ROS2** 是 HYDRA-UMC 与 ROS 2 之间双向的高层协调边界。它把持续观测映射为 topic,把即时检查映射为 service,把长时间运行的单元作业映射为可取消的 action。它不是一个电机控制节点,也不能绕过 HYDRA-UMC-SERVER、MCU 限位、看门狗或急停(E-STOP)。 目前只接通了状态主题和安全停止服务;检查服务和作业 action 只是保留的名称,背后还没有消息类型。必须转动节点状态主题才会被送达:`run_forever()` 会在独立线程中完成。
 
 它属于 **External Automation Bridges** 家族:一组共享 `HYDRA-UMC-SDK` 相同安全契约的兄弟仓库(CNC、LASER、OPENPNP、PRINTER3D、ROS2),因此任何一个桥接都不能自行发明"可以安全工作"的定义。
 
-### 核心特性:
-* ✅ **真实的无依赖协调核心:** `coordinator.py` 中的 `Ros2Coordinator` 完全没有导入 `rclpy`——它刻意保持为纯 Python,可以在任何主机上测试,无需安装 ROS 2。*(已实现,并在 `tests/test_coordinator.py` 中测试)*
-* ✅ **真实的四向接口映射:** 四个固定的类属性为每种用途精确保留对应的 ROS 2 接口类型——`/hydra_umc/machine_state`(topic,持续状态)、`/hydra_umc/inspect_cell`(service,短时检查)、`/hydra_umc/execute_cell_job`(action,可取消作业)、`/hydra_umc/request_safe_stop`(服务,受控停止)。*(已实现)*
-* ✅ **真实的共享安全门控:** 每个通过 `Ros2Coordinator.dispatch()` 派发的任务都会由 `HYDRA-UMC-SDK` 的 `bridge_contract` 中的 `evaluate_job()` 评估,这与所有兄弟桥接以及 HYDRA-UMC-SERVER 使用的是同一个门控;生产性阶段需要外部机器处于 `IDLE` 且 HYDRA-UMC 单元处于 `READY`,而 `ABORT` 在故障期间仍可请求。*(已实现)*
-* ✅ **安全拒绝的阶段路由与静态证据:** 生产性阶段只映射到计划的作业操作,`ABORT` 映射到 `/hydra_umc/request_safe_stop`,未知的未来 SDK 阶段会被拒绝。`inspect_interface_plan.py` 会输出静态模式 `1.1` 计划——包括状态 topic 所需的真实 `transient_local` 持久性 QoS(ROS 2 自身对 ROS 1 latched publisher 的替代方案,参考 design.ros2.org/articles/qos.html 调研而来)——不导入 `rclpy` 也不联系 DDS。*(已实现,已测试)*
-* ✅ **真实的、部分的 `rclpy` 传输层:** `rclpy_transport.py` 如今已经用真实的标准 ROS 2 消息类型连接这 2 个接口——`Ros2SafeStopClient`(一个真实的 `std_srvs/Trigger` 客户端)和 `Ros2StateSubscriber`(一个真实的 `std_msgs/String` 订阅者,使用真实的 `transient_local` 持久性 QoS)。*(已实现,并在 `tests/test_rclpy_transport.py` 中测试)*
-* ✅ **非变更式构建/测试:** `build-test.bat`/`.sh` 编译源码并运行确定性单元测试,不改变版本或 CHANGELOG。*(已实现,见下方"构建与运行")*
-* 🔜 **为 `inspect_service`/`job_action` 定制的 `.srv`/`.action` 契约** —— 这些没有真实的标准 ROS 2 消息类型,因此为它们编写客户端需要本仓库先定义自己的接口包。*(计划中)*
-* ✅ **观测到的机器状态、保留消息与重复键：** 桥接器一旦跟随 ROS 2 状态主题，共享闸门就使用机器上报的状态，而不是作业中写的 `machine_state`（任何人都能在代理上发布的消息），从未收到消息的机器按 OFFLINE 处理；`handle_message()` 会忽略保留消息（代理在每次重连时都会重放），若传入 `IdempotencyStore`，对重复的 `idempotency_key` 返回第一次的答复。*（已实现，已在 `tests/test_intake.py` 中测试）*
-* ✅ **能承受输入的消息循环、真正被转动的节点、会过期的状态:** `handle_message()` 绝不抛出异常(过大或嵌套很深的 JSON 以及任何意外故障都会作为拒绝返回);`cmd/job` 与其他桥接一样用 `allowed` 回答(并保留原有的 `accepted`);`ABORT` 作业会明确说明它只是计划,真正的停止是 `cmd/safe_stop`。`run_forever()` 在独立线程中转动节点(`spin_node_in_background()`,使状态主题真正被送达),复用同一个服务客户端,在永不排在其他命令之后的通道上执行 `cmd/safe_stop`,在 `availability` 上留下 Last Will,用规范化的 `machine_state` 和 `observed_at` 时间重新发布状态,并在无法订阅 ROS 2 状态主题时拒绝启动;`observed_max_age_seconds` 让不再被重新发布的状态视为 OFFLINE(默认关闭)。*(已实现,已用替身测试;从未针对真实的 ROS 2 图运行,因此执行器和 QoS 的行为未经验证)*
+## 🧩 在 HYDRA-UMC 中的角色
 
----
+**HYDRA-UMC-BRIDGE-ROS2** 位于ROS 2 图与机器人单元之间。它转述对方所说的内容，在任何辅助作业前询问共用关口，且绝不接管所协调机器的决定权。
 
-## 2. 🔄 ROS 2 协调流程
+所有桥接都遵循 `HYDRA-UMC-SDK` 的共同安全契约：只有共用的 `evaluate_job()` 关口放行，任务才会被接受，而该关口在失败时保持关闭。父项目是 `HYDRA-UMC-SERVER`；本桥接不调用它，而是通过 `HYDRA-UMC-MQTT-BROKER` 以 MQTT 回应指挥该单元的一方。
+
+## 🏛️ 架构
+
+<p align="center">
+  <img src="images/architecture.svg" alt="HYDRA-UMC-BRIDGE-ROS2 architecture" width="100%">
+</p>
+
+<details>
+<summary>图表的文本版本（Mermaid）</summary>
 
 ```mermaid
 flowchart LR
@@ -80,9 +85,9 @@ flowchart LR
     SDK -- GateDecision --> BRIDGE
 ```
 
----
+</details>
 
-## 3. 🧱 架构与设计决策
+**为什么这样构建**
 
 * **为什么 `coordinator.py` 完全不依赖 `rclpy`。** 其模块自身的文档字符串明确说明了这一点:它"可以在任何主机上测试,只有通过单独部署的适配器才会变成一个 ROS 2 节点"。这让与安全相关的协调逻辑无需安装 ROS 2 就能在 CI 中测试,并允许日后独立选择和验证适配器。
 * **为什么使用三种不同的接口类型,而不是一个通用通道。** `state_topic`、`inspect_service` 和 `job_action` 被刻意设计为对应 ROS 2 自身的语义:持续状态发布不需要请求/响应(topic),快速检查需要同步的应答(service),而单元作业需要能在执行中途被取消(action)——把它们压缩成一个通道会丢失这种区分。
@@ -91,55 +96,94 @@ flowchart LR
 * **为什么 `rclpy` 适配器和 ROS `.msg`/`.srv`/`.action` 契约尚未加入本仓库。** 在选定并测试真实的 ROS 2 环境之前就绑定具体的消息/服务/动作定义,会有引入这个本地无依赖核心无法验证的假设的风险。
 * **它如何融入整个生态系统。** BRIDGE-ROS2 位于 ROS 2 节点与 `HYDRA-UMC-SDK` → `HYDRA-UMC-SERVER` → MCU 安全之间:它是一个协调边界,绝不是电机控制节点,也不能绕过 HYDRA-UMC-SERVER、MCU 限位、看门狗或急停。
 
----
+## ✨ 功能
 
-## 📂 目录结构
+* ✅ **真实的无依赖协调核心:** `coordinator.py` 中的 `Ros2Coordinator` 完全没有导入 `rclpy`——它刻意保持为纯 Python,可以在任何主机上测试,无需安装 ROS 2。*(已实现,并在 `tests/test_coordinator.py` 中测试)*
+* ✅ **真实的四向接口映射:** 四个固定的类属性为每种用途精确保留对应的 ROS 2 接口类型——`/hydra_umc/machine_state`(topic,持续状态)、`/hydra_umc/inspect_cell`(service,短时检查)、`/hydra_umc/execute_cell_job`(action,可取消作业)、`/hydra_umc/request_safe_stop`(服务,受控停止)。*(已实现)*
+* ✅ **真实的共享安全门控:** 每个通过 `Ros2Coordinator.dispatch()` 派发的任务都会由 `HYDRA-UMC-SDK` 的 `bridge_contract` 中的 `evaluate_job()` 评估,这与所有兄弟桥接以及 HYDRA-UMC-SERVER 使用的是同一个门控;生产性阶段需要外部机器处于 `IDLE` 且 HYDRA-UMC 单元处于 `READY`,而 `ABORT` 在故障期间仍可请求。*(已实现)*
+* ✅ **安全拒绝的阶段路由与静态证据:** 生产性阶段只映射到计划的作业操作,`ABORT` 映射到 `/hydra_umc/request_safe_stop`,未知的未来 SDK 阶段会被拒绝。`inspect_interface_plan.py` 会输出静态模式 `1.1` 计划——包括状态 topic 所需的真实 `transient_local` 持久性 QoS(ROS 2 自身对 ROS 1 latched publisher 的替代方案,参考 design.ros2.org/articles/qos.html 调研而来)——不导入 `rclpy` 也不联系 DDS。*(已实现,已测试)*
+* ✅ **真实的、部分的 `rclpy` 传输层:** `rclpy_transport.py` 如今已经用真实的标准 ROS 2 消息类型连接这 2 个接口——`Ros2SafeStopClient`(一个真实的 `std_srvs/Trigger` 客户端)和 `Ros2StateSubscriber`(一个真实的 `std_msgs/String` 订阅者,使用真实的 `transient_local` 持久性 QoS)。*(已实现,并在 `tests/test_rclpy_transport.py` 中测试)*
+* ✅ **非变更式构建/测试:** `build-test.bat`/`.sh` 编译源码并运行确定性单元测试,不改变版本或 CHANGELOG。*(已实现,见下方"构建与发布")*
+* 🔜 **为 `inspect_service`/`job_action` 定制的 `.srv`/`.action` 契约** —— 这些没有真实的标准 ROS 2 消息类型,因此为它们编写客户端需要本仓库先定义自己的接口包。*(计划中)*
+* ✅ **观测到的机器状态、保留消息与重复键：** 桥接器一旦跟随 ROS 2 状态主题，共享闸门就使用机器上报的状态，而不是作业中写的 `machine_state`（任何人都能在代理上发布的消息），从未收到消息的机器按 OFFLINE 处理；`handle_message()` 会忽略保留消息（代理在每次重连时都会重放），若传入 `IdempotencyStore`，对重复的 `idempotency_key` 返回第一次的答复。*（已实现，已在 `tests/test_intake.py` 中测试）*
+* ✅ **能承受输入的消息循环、真正被转动的节点、会过期的状态:** `handle_message()` 绝不抛出异常(过大或嵌套很深的 JSON 以及任何意外故障都会作为拒绝返回);`cmd/job` 与其他桥接一样用 `allowed` 回答(并保留原有的 `accepted`);`ABORT` 作业会明确说明它只是计划,真正的停止是 `cmd/safe_stop`。`run_forever()` 在独立线程中转动节点(`spin_node_in_background()`,使状态主题真正被送达),复用同一个服务客户端,在永不排在其他命令之后的通道上执行 `cmd/safe_stop`,在 `availability` 上留下 Last Will,用规范化的 `machine_state` 和 `observed_at` 时间重新发布状态,并在无法订阅 ROS 2 状态主题时拒绝启动;`observed_max_age_seconds` 让不再被重新发布的状态视为 OFFLINE(默认关闭)。*(已实现,已用替身测试;从未针对真实的 ROS 2 图运行,因此执行器和 QoS 的行为未经验证)*
 
-```text
-HYDRA-UMC-BRIDGE-ROS2/
-├── src/
-│   └── hydra_umc_bridge_ros2/
-│       ├── __init__.py
-│       ├── coordinator.py       # Ros2Coordinator: 无依赖的 topic/service/action 门控
-│       ├── rclpy_transport.py   # 真实的 rclpy 传输 - 仅限拥有真实标准 ROS 2 消息类型的 2 个接口
-│       └── mqtt_transport.py    # 面向此 bridge 已有真实逻辑的真实 MQTT broker 传输
-├── tests/
-│   ├── test_coordinator.py      # 协调核心的确定性单元测试
-│   ├── test_rclpy_transport.py  # 针对模拟节点/发布者的真实 rclpy 传输测试
-│   ├── test_mqtt_transport.py   # 针对模拟 broker 客户端的 MQTT 命令/状态格式测试
-│   ├── test_mqtt_environment.py # 服务环境中的 MQTT 凭据和 TLS 会传到客户端
-│   ├── test_intake.py           # 观测状态、保留消息与重复幂等键
-│   ├── test_hardening.py        # 能承受输入的循环、节点转动、过期状态、last will
-│   ├── fixtures/
-│   │   ├── interface-plan-v1.json    # schema-1.0 接口兼容性 fixture
-│   │   └── interface-plan-v1.1.json  # 已发布的 schema-1.1 接口兼容性 fixture
-│   └── test_edge_cases.py        # 接口计划校验、过期状态、安全停止路由和载荷边界情况
-├── tools/
-│   ├── build_test.py            # 非变更式编译 + 测试运行器 (build-test.bat/.sh)
-│   ├── inspect_interface_plan.py # 输出静态的 plan-only 1.1 版接口模式 JSON
-│   ├── ci_validate.py           # 无依赖、非破坏性的CI基线检查 (由 .github/workflows/ci.yml 使用)
-│   ├── bump_version.py          # 同步 pyproject.toml、清单和 CHANGELOG.md
-│   ├── _doc_policy.py           # 家族共享的文档规则 (HYDRA-UMC-SDK 的副本,保持同步)
-│   ├── _readme_parity.py        # 检查八个 README 结构一致 (HYDRA-UMC-SDK 的副本,保持同步)
-│   ├── hydra_project_tool.py    # 每个仓库相同的命令: validate、test、ci、version、status、bump
-│   └── extra_build_steps.py     # 除共享构建测试外,本仓库自己的构建步骤 (自带的单元测试)
-├── docs/
-│   └── BRIDGE_GUIDE.md          # 范围、兼容平台、脚本、硬件验收门控
-├── images/
-│   └── HYDRA_UMC_BANNER.svg     # README 横幅图
-├── build-test.bat / build-test.sh  # 仅验证,绝不修改仓库
-├── build.bat / build.sh            # 先验证,成功后才更新版本 + CHANGELOG
-├── pyproject.toml               # 包元数据;依赖 HYDRA-UMC-SDK (git)
-├── hydra-umc.project.json       # 生态系统清单(版本、成熟度、家族)
-├── CHANGELOG.md
-├── CODE_OF_CONDUCT.md / CONTRIBUTING.md / SECURITY.md / SUPPORT.md
-├── LICENSE / LICENSE.md
-└── README.md / README_*.md      # 本文件及其 6 种译文
+## 🔒 安全与防护
+
+| 威胁 | 防御 | 位置 |
+|---|---|---|
+| 对处于不安全状态的单元或机器下达任务 | 每个任务都经过 SDK 共用的 `evaluate_job()` 关口，该关口失败时保持关闭；桥接本身没有接受/拒绝逻辑 | SDK `bridge_contract` |
+| 过大的任务数据 | 最多 32 个参数，键最长 64 个字符，值最长 1024，标识符最长 128（`MAX_PARAMETERS`、`MAX_PARAMETER_KEY_CHARS`、`MAX_PARAMETER_VALUE_CHARS`、`MAX_IDENTIFIER_CHARS`） | SDK `bridge_contract` |
+| 重复或重放的命令 | `IdempotencyStore` 将每个键记住 24 小时、最多 10 000 条；重复请求得到第一次的答复而不是重新评估 | SDK `job_intake` |
+| 巨大或恶意的 MQTT 负载 | 超过 16 KiB 的负载、不可读或嵌套过深的 JSON 以及任何意外故障，都会在结果主题上得到拒绝答复，且不会终止循环 | `mqtt_transport.py` |
+| 允许范围之外的 ROS 2 接口 | 接口名必须以 `/hydra_umc/` 开头，桥接只认识接口种类，绝不处理原始运动 | `coordinator.py` |
+| 排在其他工作后面等待的停止 | `cmd/safe_stop` 在独立通道上运行（`STOP_VERBS`）；两个标准 rclpy 接口使用 `transient_local` 持久性，因此迟到的订阅者仍能收到最后的状态 | `mqtt_transport.py`, `rclpy_transport.py` |
+| 未经核实就采信的机器状态 | 在 `start_observing()` 之前什么都没读到，关口拒绝任务；开始观察后，从未收到或不是已知 `MachineState` 的状态按 `OFFLINE` 处理 | `mqtt_transport.py` |
+
+**它绝不做的事：** 它不把任何任务映射为原始运动，只通过两个标准类型接口与 ROS 2 通信。
+
+## 🔌 接口
+
+位于 `hydra/bridges/ros2/` 下的主题；每个命令在 `<verb>/result` 上得到答复。
+
+| 主题或路由 | 内容 |
+|---|---|
+| `cmd/job` | `BridgeJob`；答复是针对 ROS 2 接口的派发决定 |
+| `cmd/safe_stop` | 通过 `Ros2SafeStopClient` 调用安全停止服务 |
+| `state`, `availability` | 从 ROS 2 状态主题（`std_msgs/msg/String`）读取的机器状态和 `online`/`offline` |
+
+无需 ROS 2 即可检查接口计划：`python tools/inspect_interface_plan.py --verify-fixture`。
+
+## ⚙️ 配置
+
+| 变量 | 默认值 | 设置内容 |
+|---|---|---|
+| `HYDRA_MQTT_USERNAME` | 无 | MQTT 用户名；代理将其绑定到客户端 ID 前缀 |
+| `HYDRA_MQTT_PASSWORD` | 无 | 密码；只能与用户名一起使用 |
+| `HYDRA_MQTT_PASSWORD_FILE` | 无 | 从文件读取的密码（Docker 或 systemd 机密）；设置了 `HYDRA_MQTT_PASSWORD` 时忽略 |
+| `HYDRA_MQTT_TLS_CA` | 无 | 签署代理证书的 CA 文件：连接使用 TLS 并验证证书 |
+| `HYDRA_MQTT_TLS` | 关闭 | `1` 启用 TLS，并用系统信任的 CA 验证 |
+| `HYDRA_MQTT_TLS_CERT` / `HYDRA_MQTT_TLS_KEY` | 无 | 用于要求双向 TLS 的代理的客户端证书及其密钥；两者都需要 |
+
+ROS 2 节点名是 `create_ros2_node()` 的参数；MQTT 主机、端口和客户端 ID（`hydra-umc-bridge-ros2`）是 `run_forever()` 的参数。
+
+## 🚀 快速开始
+
+需要 Python 3.11 或更高版本。测试和构建脚本期望 `HYDRA-UMC-SDK` 位于本仓库旁边（`../HYDRA-UMC-SDK`），或由 `HYDRA_UMC_SDK_ROOT` 指定。
+
+无需硬件即可试用（用模拟器和替身检查整个桥接）：
+
+```bash
+py -3 tools/build_test.py          # Windows
+python3 tools/build_test.py         # Linux, macOS
 ```
 
----
+启动服务（没有控制台脚本：服务就是 MQTT 传输的 `run_forever()`，由你自己的启动代码调用）：
 
-## 4. ⚙️ 构建与运行
+```python
+from hydra_umc_bridge_ros2.rclpy_transport import create_ros2_node, spin_node_in_background
+from hydra_umc_bridge_ros2.mqtt_transport import Ros2MqttBridge, run_forever
+node = create_ros2_node("hydra_umc_bridge")          # needs rclpy from a ROS 2 installation
+spin_node_in_background(node)
+bridge = Ros2MqttBridge(node, cell_state=lambda: cell_state, node_is_spinning=True)
+run_forever(bridge, host="192.168.0.180")
+```
+
+用户名、密码和 TLS 文件来自 `HYDRA_MQTT_*` 变量（见“配置”）；上面的代码本身不需要凭据。
+
+## 🧪 测试
+
+运行 `python tools/build_test.py` 会执行 81 个自动 `unittest` 用例（同时编译每个模块）。测试不需要硬件、网络或可选软件包：需要 `paho-mqtt`、`pyserial` 或厂商库的用例使用替身，缺少软件包时则跳过。
+
+| 测试文件 | 测试数 | 覆盖内容 |
+|---|---|---|
+| `test_coordinator.py`, `test_intake.py` | - | 任务到接口的映射与任务接收 |
+| `test_rclpy_transport.py` | - | 两个 rclpy 接口对 rclpy 替身 |
+| `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_edge_cases.py` | - | 主题分发、环境凭据、恶意客户端、边界情况 |
+
+CI 运行 `HYDRA_UMC_CI=1 python tools/ci_validate.py`，检查清单、文档、八个 README 和图片，并使用 SDK 副本运行测试。
+
+## 🏗️ 构建与发布
 
 需要 Python 3.11+。`tools/build_test.py` 期望 `HYDRA-UMC-SDK` 作为兄弟目录被检出(`../HYDRA-UMC-SDK`),或通过环境变量 `HYDRA_UMC_SDK_ROOT` 指定。
 
@@ -155,9 +199,52 @@ bash build.sh
 
 `build-test` 使用 `py_compile` 编译 `src/` 下的每个模块,并运行完整的 `unittest` 套件(`tests/` 下的所有 `test_*.py` 文件)——以确定性的方式进行,不需要安装 ROS 2,不需要网络,也不会改变版本/CHANGELOG。`build` 会先运行同样的验证,只有成功后才调用 `tools/bump_version.py`,在 `pyproject.toml`、`hydra-umc.project.json` 和 `CHANGELOG.md` 之间同步版本号。目前尚无真正的硬件 `run` 命令 —— 这需要经过验证的 ROS 2 部署。
 
----
+## 🩺 故障排除
 
-## ✅ 当前状态与后续步骤
+| 你看到 | 原因 | 处理 |
+|---|---|---|
+| `ModuleNotFoundError: hydra_umc_sdk` | 未安装 SDK，且不在本仓库旁边 | 把 `HYDRA-UMC-SDK` 克隆到本仓库旁边，或设置 `HYDRA_UMC_SDK_ROOT` |
+| `paho-mqtt is not installed` | MQTT 客户端是可选附加包 | `pip install ".[mqtt]"`（需要 `paho-mqtt` 2.1 或更高，低于 3） |
+| `password was given without a username` | MQTT 凭据需要两部分 | 除密码外还要设置 `HYDRA_MQTT_USERNAME` |
+| `could not reach the MQTT broker after N attempts` | 代理未运行、地址错误或端口已关闭 | 启动 `HYDRA-UMC-MQTT-BROKER`，检查传给传输层的主机和端口（每隔 2 秒试 5 次；TLS 握手失败不会重试） |
+| `the MQTT broker refused the connection` | 代理拒绝了凭据（或未在时限内应答） | 检查 `HYDRA_MQTT_USERNAME` 和密码；客户端 ID 必须以代理绑定到该凭据的前缀开头 |
+| `"allowed": false` + `reason` | 共用关口或某项保护拒绝了命令 | 阅读 `reason` 并排除原因；不要盲目重试 |
+| `rclpy` cannot be imported | rclpy 随 ROS 2 安装提供，而非来自 PyPI | 启动服务前先加载 ROS 2 环境；测试不需要它 |
+
+## 📂 仓库结构
+
+<p align="center">
+  <img src="images/repository-structure.svg" alt="Repository structure of HYDRA-UMC-BRIDGE-ROS2" width="100%">
+</p>
+
+<details>
+<summary>目录树的文本版本</summary>
+
+```text
+HYDRA-UMC-BRIDGE-ROS2/
+├── src/hydra_umc_bridge_ros2/
+│   ├── coordinator.py             任务到具名 ROS 2 接口，绝不发原始运动
+│   ├── rclpy_transport.py         两个标准类型的 rclpy 接口
+│   └── mqtt_transport.py          MQTT 命令、状态与安全停止传输
+├── tests/                         81 项测试（rclpy 用替身代替）
+├── docs/                          桥接指南
+├── tools/                         构建与测试运行器、版本提升、CI 校验、README 与图片的生成和检查
+├── images/                        横幅图与 README 的图片
+├── .github/                       CI 工作流和 Issue 模板
+├── pyproject.toml                 包元数据与依赖
+├── hydra-umc.project.json         清单：版本、成熟度、系列
+├── CHANGELOG.md                   每个版本的变化
+├── build.sh build.bat             构建脚本（从不改变版本）
+├── build-test.sh build-test.bat   构建脚本（从不改变版本）
+├── test.sh test.bat               运行测试
+└── SECURITY.md SUPPORT.md CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE LICENSE.md
+```
+
+</details>
+
+## 🗺️ 路线图与已知限制
+
+**当前已知限制**
 
 **目前真实的部分:** 版本 `0.1.3`,作为一个无依赖协调核心(`Ros2Coordinator`)是功能齐备的,配有覆盖协调核心、MQTT 传输层和 rclpy 传输层的六十四项确定性 `unittest` 测试套件、安全拒绝的阶段路由、声明了状态 topic 所需的真实 `transient_local` 持久性 QoS 的静态 `plan-only` 接口模式、为这 2 个接口提供真实标准 ROS 2 消息类型的真实(延迟导入的)`rclpy` 传输层,以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
 
@@ -165,7 +252,9 @@ bash build.sh
 
 **仍待完成:** 尚未验证任何 ROS 网络、机器人或物理执行器 —— `rclpy` 适配器和具体的 ROS `.msg`/`.srv`/`.action` 契约只会在选定并测试了真实的 ROS 2 环境之后才会引入。
 
----
+## 🌍 语言
+
+本 README 和仓库文档提供八种语言：英语、西班牙语、德语、法语、意大利语、日语、中文和葡萄牙语（葡萄牙）。它们同时编写，并由 CI 检查八个文件拥有相同的章节和相同的链接。 本仓库没有自己的界面或消息目录，因此没有需要翻译的界面文字。
 
 ## 🔗 相关项目
 
@@ -260,20 +349,27 @@ bash build.sh
 - **[HYDRA-UMC-OPS-AGENT](https://github.com/JuanenRac/HYDRA-UMC-OPS-AGENT)** — 维护事件协调器：一个低权限的边缘角色采集经过脱敏的库存/健康快照，一个控制面角色以只读方式渲染它，并请求某个 AI 提供方给出诊断建议——从不应用补丁，也从不部署任何内容。
 - **[HYDRA-UMC-DEV-SERVER](https://github.com/JuanenRac/HYDRA-UMC-DEV-SERVER)** — 可复现的开发主机（Raspberry Pi 5 / CM5），保存整个生态系统的源代码，并在持久队列下运行有界的构建/测试任务；这是专用的开发角色，明确区别于运行中的 CM5。
 
----
+## 📚 文档
 
-## 📚 文档与社区
+更多阅读：
 
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** —— 提交 Pull Request 所需的技术栈和编码规范。
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** —— 本社区所期望的行为准则。
-- **[SECURITY.md](SECURITY.md)** —— 如何报告漏洞，以及本项目真实的安全关注重点。
-- **[SUPPORT.md](SUPPORT.md)** —— 在哪里提问和报告缺陷。
-- **[LICENSE.md](LICENSE.md)** —— 本项目自身的许可证。
+* [docs/BRIDGE_GUIDE.md](docs/BRIDGE_GUIDE.md) - 范围、接口计划、rclpy、脚本
+* [生态系统的安全基线](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)
+* [生态系统的威胁模型](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)
+* [本仓库的更新日志](CHANGELOG.md)
+* [本仓库的许可证](LICENSE.md)
+
+## 🤝 参与贡献与社区
+
+* 提交 pull request 之前，请运行 `HYDRA_UMC_CI=1 py -3 tools/ci_validate.py`（或 `HYDRA_UMC_CI=1 python3 tools/ci_validate.py`）：它必须输出 `CI_VALIDATION=PASS`。此检查不要运行 `build.sh` 或 `build.bat`；构建不是检查。
+* 八个 README 由 HYDRA-UMC-DOCS 中的同一个源生成；请勿手工编辑。修改源文件，再用 `tools/make_readmes.py` 重新生成。
+* 不要在 README 中声称尚未运行过的内容：属实时请写“仅模拟”或“尚未在硬件上试过”。
+* 请参阅 [CONTRIBUTING.md](CONTRIBUTING.md)、[行为准则](CODE_OF_CONDUCT.md)、[SECURITY.md](SECURITY.md) 和 [SUPPORT.md](SUPPORT.md)。
 
 ## 👤 作者
-**JuanenRac** (Electro Hobby 3D)
-📧 electrohobby3d@gmail.com
-📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
+
+**JuanenRac (Electro Hobby 3D)** · electrohobby3d@gmail.com
 
 ## 📜 许可证
-GPL-3.0-or-later - 详见 LICENSE。
+
+GPL-3.0-or-later - [LICENSE](LICENSE).
