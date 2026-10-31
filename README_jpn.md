@@ -18,14 +18,14 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
-  <img src="https://img.shields.io/badge/Tests-81%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-88%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.4-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-> **誠実性チェック - 今日実際に動くもの:** 依存関係のない調整コア（`coordinator.py` の `Ros2Coordinator`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、`std_srvs/Trigger` と `std_msgs/String` 向けの本物の（遅延インポートされる）`rclpy` トランスポート（`rclpy_transport.py` の `Ros2SafeStopClient`/`Ros2StateSubscriber`）、および MQTT コマンド/状態トランスポート（`mqtt_transport.py`）は本物であり、81件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。これらはいずれも、本物の ROS 2 インストール、本物の DDS ネットワーク、あるいは本物の MQTT ブローカーに対しては検証されていない - `test_rclpy_transport.py` は模擬ノード/パブリッシャーに対して実行され、`test_mqtt_transport.py` も模擬ブローカークライアントに対して実行されるため、これらのテストの通過には `rclpy`/`std_srvs`/`std_msgs` すらインストールされている必要がない。カスタムの `.srv`/`.action` 契約である `inspect_service`/`job_action` には、まだ本物の標準 ROS 2 メッセージ型もクライアントも一切存在しない。詳細は下記の「ロードマップと既知の制限」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。
+> **誠実性チェック - 今日実際に動くもの:** 依存関係のない調整コア（`coordinator.py` の `Ros2Coordinator`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、`std_srvs/Trigger` と `std_msgs/String` 向けの本物の（遅延インポートされる）`rclpy` トランスポート（`rclpy_transport.py` の `Ros2SafeStopClient`/`Ros2StateSubscriber`）、および MQTT コマンド/状態トランスポート（`mqtt_transport.py`）は本物であり、88件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。これらはいずれも、本物の ROS 2 インストール、本物の DDS ネットワーク、あるいは本物の MQTT ブローカーに対しては検証されていない - `test_rclpy_transport.py` は模擬ノード/パブリッシャーに対して実行され、`test_mqtt_transport.py` も模擬ブローカークライアントに対して実行されるため、これらのテストの通過には `rclpy`/`std_srvs`/`std_msgs` すらインストールされている必要がない。カスタムの `.srv`/`.action` 契約である `inspect_service`/`job_action` には、まだ本物の標準 ROS 2 メッセージ型もクライアントも一切存在しない。詳細は下記の「ロードマップと既知の制限」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。 MQTT トランスポートは、開発用マシン上の本物の HYDRA-UMC-MQTT-BROKER に対しても実行されています(`tests/test_broker_integration.py`。ブローカーが未インストールの場合はスキップされます)。QoS 0・1・2 でのパブリッシュとサブスクライブ、保持された可用性とそのラストウィル、ブローカーが停止して再起動した後の復帰を確認しています。
 
 > **安全性とセキュリティの現状:** このエコシステムは認証された安全システムではありません。ハードウェアの E-STOP 経路、ファームウェアが強制する制限やインターロック、検証済みの動作コマンドはまだありません。ファームウェアイメージは CRC-32 と Ed25519 署名で検査し、リリースビルドは公開済みの開発用鍵を拒否します(リレーの先のツールヘッドと拡張ボードは引き続き URTC のブートローダーを使い、署名ではなく共有鍵の HMAC-SHA256 を使います)。TLS と相互 TLS は任意で、既定では無効です。独自基板はまだ実装も試験もされていません。ここに書かれた内容を人の安全のために頼る前に、[セキュリティベースライン](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)と[脅威モデル](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)をお読みください。
 
@@ -37,7 +37,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | バージョン | `0.1.4` |
 | 成熟度 | 機能する |
-| テスト | 81 (`python tools/build_test.py`) |
+| テスト | 88 (`python tools/build_test.py`) |
 | 技術 | Python / ROS 2 / rclpy / HYDRA-UMC-SDK |
 | 対象 | HYDRA-UMC セルの Raspberry Pi CM5 |
 | 実機での確認 | シミュレーションのみ：エミュレーター、模擬部品、シミュレーターで試験済み。このバージョンについて実機での動作記録はありません |
@@ -53,7 +53,7 @@ GPL-3.0-or-later - see LICENSE
 | 領域 | 状態 | ここでの意味 |
 |---|---|---|
 | ソフトウェア | 🟡 | 主な目的では動作します。足りない点は上の正直さの確認に書かれています |
-| テスト | 🟢 | 自動テスト 81 件。変更のたびに実行されます |
+| テスト | 🟢 | 自動テスト 88 件。変更のたびに実行されます |
 | 実機 | 🟠 | シミュレーションのみ：エミュレーター、模擬部品、シミュレーターで試験済み。このバージョンについて実機での動作記録はありません |
 | ドキュメント | 🟢 | 8 言語の README。変更のたびにマニフェストと照合されます |
 
@@ -173,7 +173,7 @@ run_forever(bridge, host="192.168.0.180")
 
 ## 🧪 テスト
 
-`python tools/build_test.py` で自動 `unittest` 81 件を実行します（各モジュールのコンパイルも行います）。テストにハードウェア、ネットワーク、オプションのパッケージは不要で、`paho-mqtt`・`pyserial`・ベンダーのライブラリが必要なものは代用品を使うか、パッケージがなければスキップされます。
+`python tools/build_test.py` で自動 `unittest` 88 件を実行します（各モジュールのコンパイルも行います）。テストにハードウェア、ネットワーク、オプションのパッケージは不要で、`paho-mqtt`・`pyserial`・ベンダーのライブラリが必要なものは代用品を使うか、パッケージがなければスキップされます。
 
 | テストファイル | テスト数 | 対象 |
 |---|---|---|
@@ -246,7 +246,7 @@ HYDRA-UMC-BRIDGE-ROS2/
 
 **現時点の既知の制限**
 
-**現時点で実在するもの:** バージョン `0.1.4`。連携コア、MQTTトランスポート、rclpyトランスポートを対象とする81件の決定論的な `unittest` スイート、フェイルクローズのフェーズルーティング、状態トピックが必要とする実際の `transient_local` durability QoS を宣言する静的な `plan-only` インターフェーススキーマ、実際の標準ROS 2メッセージ型を持つ2つのインターフェース向けの実際の(遅延インポートされる)`rclpy` トランスポート、SDKチェックアウトを伴いCIに組み込まれた非破壊的なbuild-testスクリプトを備える依存関係なしの連携コア(`Ros2Coordinator`)として機能している。
+**現時点で実在するもの:** バージョン `0.1.4`。連携コア、MQTTトランスポート、rclpyトランスポートを対象とする88件の決定論的な `unittest` スイート、フェイルクローズのフェーズルーティング、状態トピックが必要とする実際の `transient_local` durability QoS を宣言する静的な `plan-only` インターフェーススキーマ、実際の標準ROS 2メッセージ型を持つ2つのインターフェース向けの実際の(遅延インポートされる)`rclpy` トランスポート、SDKチェックアウトを伴いCIに組み込まれた非破壊的なbuild-testスクリプトを備える依存関係なしの連携コア(`Ros2Coordinator`)として機能している。
 
 **統合境界:** このブリッジは連携境界に過ぎない —— モーター制御ノードではなく、HYDRA-UMC-SERVER、MCUの限界、ウォッチドッグ、E-STOPを迂回することはできない。送信されるすべてのジョブは、依然としてすべての兄弟ブリッジが使う同じ共有ゲートを通過する。
 
