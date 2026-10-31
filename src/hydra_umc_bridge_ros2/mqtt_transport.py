@@ -58,6 +58,7 @@ from hydra_umc_sdk.job_intake import IdempotencyStore
 from hydra_umc_sdk.bridge_transport import MessageDispatcher as SharedMessageDispatcher
 from hydra_umc_sdk.bridge_transport import MqttPublish, connect_with_retry, open_bridge_client  # noqa: F401
 
+from .global_stop import GlobalStopGuard, GlobalStopSettings, follow_on_connect
 from .coordinator import Ros2Coordinator, Ros2Dispatch
 from .rclpy_transport import Ros2Node, Ros2SafeStopClient, Ros2StateSubscriber, SubscribeResult, spin_node_in_background
 
@@ -69,6 +70,10 @@ AVAILABILITY_TOPIC = f"{TOPIC_PREFIX}availability"
 MAX_PAYLOAD_BYTES = 65536
 # The commands that must never wait behind another one.
 STOP_VERBS = frozenset({"cmd/safe_stop"})
+
+# Refused while the server announces a global stop (when the bridge follows it): a job asks for work (an abort is let through); the safe stop is never refused.
+MOVING_VERBS: frozenset[str] = frozenset()
+GLOBAL_STOP_ENVIRONMENT_NAME = "ROS2"
 
 
 def _dispatch_result(dispatch: Ros2Dispatch) -> str:
@@ -109,6 +114,7 @@ class Ros2MqttBridge:
         node_is_spinning: bool = False,
         observed_max_age_seconds: float | None = None,
         clock: Callable[[], float] = time.monotonic,
+        global_stop: GlobalStopGuard | GlobalStopSettings | None = None,
     ) -> None:
         self.node = node
         self._cell_state = cell_state
@@ -122,6 +128,13 @@ class Ros2MqttBridge:
         self._observed_at = 0.0
         # docs/BRIDGE_CONTRACT.md: the idempotency key of a job is handled once; a repeat gets the answer that was given
         self._idempotency = idempotency
+        # follows the global stop that the server announces (global_stop.py); off unless HYDRA_UMC_ROS2_GLOBAL_STOP=1 or a guard is given
+        if isinstance(global_stop, GlobalStopGuard):
+            self.global_stop = global_stop
+        elif global_stop is not None:
+            self.global_stop = GlobalStopGuard(global_stop)
+        else:
+            self.global_stop = GlobalStopGuard.from_environment(GLOBAL_STOP_ENVIRONMENT_NAME)
         # The machine state as the ROS 2 state topic reports it. Before `start_observing()` nothing has been read and the gate refuses the job; once observing, a machine whose state
         # was never heard (or is not a known state) counts as OFFLINE, so nothing productive is forwarded on a claim.
         self._observing = False
@@ -168,6 +181,9 @@ class Ros2MqttBridge:
             return []
         if len(payload) > MAX_PAYLOAD_BYTES:
             return _refusal(suffix, f"payload is larger than {MAX_PAYLOAD_BYTES} bytes")
+        refused = self.global_stop.refusal(suffix, payload, moving=MOVING_VERBS)
+        if refused is not None:
+            return _refusal(suffix, refused)
         try:
             if suffix == "cmd/job":
                 return [self._handle_job(payload)]
@@ -231,6 +247,16 @@ class MessageDispatcher(SharedMessageDispatcher):
 
     def __init__(self, bridge: object, stop_verbs: frozenset[str] = STOP_VERBS) -> None:
         super().__init__(bridge, TOPIC_PREFIX, stop_verbs)  # type: ignore[arg-type]
+        guard = getattr(bridge, "global_stop", None)
+        self._global_stop = guard if isinstance(guard, GlobalStopGuard) else None
+
+    def on_message(self, client: object, userdata: object, message: object) -> None:
+        # the announcement of the global stop is retained: it is the state, not a replay, so it is read before the retained check of the shared dispatcher
+        guard = self._global_stop
+        if guard is not None and guard.enabled and getattr(message, "topic", None) == guard.topic:
+            guard.observe(bytes(message.payload))  # type: ignore[attr-defined]
+            return
+        super().on_message(client, userdata, message)
 
 
 def run_forever(
@@ -268,6 +294,7 @@ def run_forever(
         raise ValueError("password was given without a username - MQTT credentials need both")
 
     dispatcher = MessageDispatcher(bridge)
+    guard = getattr(bridge, "global_stop", None)  # a bridge object that is not one of ours has none: nothing to follow
     spinner = None
     try:
         client = open_bridge_client(
@@ -280,6 +307,7 @@ def run_forever(
             password=password,
             max_connect_attempts=max_connect_attempts,
             connect_retry_delay_seconds=connect_retry_delay_seconds,
+            on_connected=follow_on_connect(guard) if isinstance(guard, GlobalStopGuard) else None,
         )
         spinner = spin_node_in_background(bridge.node)
         bridge.start_observing()   # from here the gate has a machine state to use: the one the ROS 2 topic reports (without it the job is refused)
