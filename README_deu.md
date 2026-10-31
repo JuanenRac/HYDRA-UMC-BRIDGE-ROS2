@@ -179,6 +179,8 @@ Benutzername, Passwort und TLS-Dateien kommen aus den Variablen `HYDRA_MQTT_*` (
 
 | Testdatei | Tests | Was sie abdeckt |
 |---|---|---|
+| `test_global_stop.py`, `test_global_stop_broker.py` | - | die Wächterlogik des globalen Stopps und ihre Ablehnungen mit Grund, und dasselbe gegen einen echten Broker auf einem freien lokalen Port (die Ankündigung mit QoS 0, 1 und 2, ein gehaltener Stopp wird beim Verbinden befolgt, ein unlesbarer schlägt geschlossen fehl) |
+| `test_broker_integration.py`, `broker_harness.py` | - | der MQTT-Client gegen einen echten HYDRA-UMC-MQTT-BROKER auf einem freien lokalen Port: ein Befehl über den Client, der gehaltene Zustand und das Letzte Testament, und der Rückweg, nachdem der Broker aus- und wieder eingeschaltet wurde; er überspringt sich, wenn Node.js, `paho-mqtt` oder der installierte Broker (`HYDRA_UMC_TEST_BROKER_DIR`, standardmäßig der Nachbarordner) fehlen |
 | `test_coordinator.py`, `test_intake.py` | - | Auftrag-zu-Schnittstelle-Abbildung und die Auftragsannahme |
 | `test_rclpy_transport.py` | - | die zwei rclpy-Schnittstellen gegen einen rclpy-Ersatz |
 | `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_edge_cases.py` | - | Topic-Verteilung, Zugangsdaten der Umgebung, feindliche Clients, Randfälle |

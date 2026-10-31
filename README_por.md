@@ -179,6 +179,8 @@ O nome de utilizador, a palavra-passe e os ficheiros TLS vêm das variáveis `HY
 
 | Ficheiro de testes | Testes | O que cobre |
 |---|---|---|
+| `test_global_stop.py`, `test_global_stop_broker.py` | - | a guarda da paragem global e as suas recusas com o motivo, e o mesmo contra um broker real numa porta local livre (o anúncio em QoS 0, 1 e 2, uma paragem retida obedecida ao ligar, uma ilegível que falha fechada) |
+| `test_broker_integration.py`, `broker_harness.py` | - | o cliente MQTT contra um HYDRA-UMC-MQTT-BROKER real numa porta local livre: uma ordem através do cliente, o estado retido e a última vontade, e o regresso depois de o broker cair e voltar; é ignorado quando faltam o Node.js, o `paho-mqtt` ou o broker instalado (`HYDRA_UMC_TEST_BROKER_DIR`, por omissão a pasta ao lado) |
 | `test_coordinator.py`, `test_intake.py` | - | mapeamento de trabalho para interface e a admissão de trabalhos |
 | `test_rclpy_transport.py` | - | as duas interfaces rclpy contra um dublê do rclpy |
 | `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_edge_cases.py` | - | distribuição de tópicos, credenciais do ambiente, clientes hostis, casos limite |
