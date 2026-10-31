@@ -205,7 +205,7 @@ class Ros2SafeStopClient:
         if exc is not None:
             return SafeStopResult(True, False, f"safe stop call failed: {exc}")
         response = future.result()
-        return SafeStopResult(True, bool(response.success), str(response.message))
+        return SafeStopResult(True, bool(response.success), str(response.message))  # type: ignore[attr-defined]
 
 
 @dataclass(frozen=True)
@@ -235,5 +235,5 @@ class Ros2StateSubscriber:
             return SubscribeResult(False, f"std_msgs/rclpy.qos is not available: {error}")
 
         qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        subscription = node.create_subscription(String, topic, lambda msg: on_state(msg.data), qos)
+        subscription = node.create_subscription(String, topic, lambda msg: on_state(msg.data), qos)  # type: ignore[attr-defined]
         return SubscribeResult(True, "subscribed", subscription)

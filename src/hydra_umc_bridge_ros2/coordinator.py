@@ -91,7 +91,7 @@ class Ros2InterfacePlan:
         if values["mode"] != "plan-only":
             raise ValueError("ROS 2 interface plan must remain plan-only")
         for name in ("state_topic", "inspect_service", "job_action", "safe_stop_service"):
-            if not values[name].startswith("/hydra_umc/"):
+            if not values[name].startswith("/hydra_umc/"):  # type: ignore[attr-defined]
                 raise ValueError(f"ROS 2 interface {name} must stay in the /hydra_umc namespace")
         if len({values[name] for name in ("state_topic", "inspect_service", "job_action", "safe_stop_service")}) != 4:
             raise ValueError("ROS 2 interface names must remain distinct")

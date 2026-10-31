@@ -51,12 +51,12 @@ import json
 import logging
 import time
 from dataclasses import asdict
-from typing import Callable
+from typing import Any, Callable
 
 from hydra_umc_sdk.bridge_contract import BridgeError, CellState, MachineState, job_from_dict
 from hydra_umc_sdk.job_intake import IdempotencyStore
 from hydra_umc_sdk.bridge_transport import MessageDispatcher as SharedMessageDispatcher
-from hydra_umc_sdk.bridge_transport import MqttPublish, connect_with_retry, open_bridge_client
+from hydra_umc_sdk.bridge_transport import MqttPublish, connect_with_retry, open_bridge_client  # noqa: F401
 
 from .coordinator import Ros2Coordinator, Ros2Dispatch
 from .rclpy_transport import Ros2Node, Ros2SafeStopClient, Ros2StateSubscriber, SubscribeResult, spin_node_in_background
@@ -182,7 +182,7 @@ class Ros2MqttBridge:
         try:
             job = job_from_dict(json.loads(payload))
         except (json.JSONDecodeError, BridgeError, UnicodeDecodeError) as error:
-            dispatch = {"allowed": False, "accepted": False, "interface": "none", "reason": f"malformed job payload: {error}", "mode": "plan-only"}
+            dispatch: Any = {"allowed": False, "accepted": False, "interface": "none", "reason": f"malformed job payload: {error}", "mode": "plan-only"}
             return MqttPublish(result_topic, json.dumps(dispatch))
         if self._idempotency is not None and not self._idempotency.claim(job.idempotency_key):
             stored = self._idempotency.recall(job.idempotency_key)
@@ -283,10 +283,10 @@ def run_forever(
         )
         spinner = spin_node_in_background(bridge.node)
         bridge.start_observing()   # from here the gate has a machine state to use: the one the ROS 2 topic reports (without it the job is refused)
-        subscribed = bridge_state_to_mqtt(bridge.node, lambda topic, payload, retain: client.publish(topic, payload, retain=retain), bridge.observe)
+        subscribed = bridge_state_to_mqtt(bridge.node, lambda topic, payload, retain: client.publish(topic, payload, retain=retain), bridge.observe)  # type: ignore[attr-defined]
         if not subscribed.subscribed:
             raise RuntimeError(f"the ROS 2 state topic cannot be observed: {subscribed.reason}")
-        client.loop_forever()
+        client.loop_forever()  # type: ignore[attr-defined]
     finally:
         if spinner is not None:
             spinner.stop()
