@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.6] - The global stop guard comes from the shared SDK and the MQTT transport has optional limits, off by default
+
 - **The guard of the global stop comes from the shared SDK:** the bridge no longer carries its own copy of `global_stop`; it imports `GlobalStopGuard`, `GlobalStopSettings` and `follow_on_connect` from `hydra_umc_sdk.global_stop`, so every bridge refuses moving commands under the same rule. The environment variables and the `[global_stop]` table are unchanged.
 
 - **Limits of the MQTT transport, off by default:** with `HYDRA_UMC_ROS2_HARDENED=1` (and the optional `HYDRA_UMC_ROS2_MAX_QUEUE`, `..._MAX_PAYLOAD_BYTES`, `..._CONNECT_BACKOFF_FACTOR`, `..._CONNECT_MAX_DELAY_SECONDS` and `..._CONNECT_JITTER`) the queue of waiting commands is bounded (the oldest waiting command is dropped, the stop lane is never bounded), the size of a payload is capped (stop verbs are exempt) and the first connection retries with exponential backoff and jitter. With nothing set, nothing changes.
