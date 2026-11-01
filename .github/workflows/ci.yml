@@ -13,15 +13,11 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/checkout@v5
         with: {repository: JuanenRac/HYDRA-UMC-SDK, path: .hydra-umc-sdk-contract, ref: v0.4.7}
-      - uses: actions/setup-python@v6
-        with: {python-version: '3.12'}
-      - name: Validate manifest, version, documentation, links and secret policy
-        run: python tools/ci_validate.py
-      - name: Lint and type-check
-        run: |
-          python -m pip install ruff==0.17.1 mypy==2.4.0 ./.hydra-umc-sdk-contract/clients/python
-          python -m ruff check src tests tools
-          python -m mypy src
+      - name: Run the baseline steps of the family
+        uses: ./.github/actions/hydra-baseline
+        with:
+          lint: full
+          lint-requirements: "./.hydra-umc-sdk-contract/clients/python"
       - name: Run non-mutating bridge verification
         env:
           HYDRA_UMC_SDK_ROOT: "${{ github.workspace }}/.hydra-umc-sdk-contract"
