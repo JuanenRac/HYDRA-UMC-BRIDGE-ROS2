@@ -180,6 +180,7 @@ Nome utente, password e file TLS vengono dalle variabili `HYDRA_MQTT_*` (vedi Co
 | File di test | Test | Cosa copre |
 |---|---|---|
 | `test_global_stop.py`, `test_global_stop_broker.py` | - | la guardia dell'arresto globale e i suoi rifiuti con il motivo, e lo stesso contro un broker reale su una porta locale libera (l'annuncio in QoS 0, 1 e 2, un arresto trattenuto obbedito alla connessione, uno illeggibile che fallisce chiuso) |
+| `test_transport_limits.py` | - | i limiti del trasporto MQTT (una coda limitata che scarta il comando in attesa più vecchio, un tetto del carico che non si applica mai ai verbi di arresto, attesa esponenziale con variazione casuale alla prima connessione) e la guardia dell'arresto globale presa dall'SDK condiviso invece di una copia; i limiti sono spenti finché le impostazioni non li accendono |
 | `test_broker_integration.py`, `broker_harness.py` | - | il client MQTT contro un vero HYDRA-UMC-MQTT-BROKER su una porta locale libera: un ordine tramite il client, lo stato trattenuto e l'ultimo testamento, e il ritorno dopo che il broker è caduto e tornato; si salta se mancano Node.js, `paho-mqtt` o il broker installato (`HYDRA_UMC_TEST_BROKER_DIR`, per impostazione predefinita la cartella accanto) |
 | `test_coordinator.py`, `test_intake.py` | - | passaggio da lavoro a interfaccia e presa in carico dei lavori |
 | `test_rclpy_transport.py` | - | le due interfacce rclpy contro un surrogato di rclpy |

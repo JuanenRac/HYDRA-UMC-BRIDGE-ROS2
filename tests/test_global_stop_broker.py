@@ -17,7 +17,7 @@ import broker_harness as harness
 from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, MachineState, job_to_dict
 
 from hydra_umc_bridge_ros2 import Ros2MqttBridge
-from hydra_umc_bridge_ros2.global_stop import DEFAULT_TOPIC, GlobalStopSettings, follow_on_connect
+from hydra_umc_sdk.global_stop import DEFAULT_TOPIC, GlobalStopSettings, follow_on_connect
 from hydra_umc_bridge_ros2.mqtt_transport import TOPIC_PREFIX, MessageDispatcher
 
 SAFE_STOP = json.dumps({"schema_version": "1.0", "state": "SAFE_STOP", "source": "hydra-umc-server"})
