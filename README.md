@@ -55,6 +55,13 @@ Each line is one part of this repository and the light says how far it is today.
 | Software | 🟡 | Works for its main purpose; the honesty check above lists what is still missing |
 | Tests | 🟢 | 119 automated tests, run on every change |
 | Real hardware | 🟠 | Simulated only: tested against emulators, fakes or simulators; no run on real hardware is recorded for this version |
+| Interface and protocols | 🟡 | The routes or messages it offers are documented and tested with a client; not every client has used them yet |
+| Integration | 🟠 | Its messages and routes are checked against the shared contracts of the SDK; it has not run together with the real equipment |
+| Security | 🟡 | Access control, input limits or signatures are implemented and tested on a computer; nobody outside the project has reviewed them |
+| Deployment | 🟠 | Published as a release; installing it on a clean machine is documented but not recorded |
+| Operation | 🟠 | It writes logs; it has no metrics or health endpoint yet |
+| Stop and safety | 🟠 | The stop path and its limits are implemented and tested against simulators; they have never run on a real machine, and this is not a certified safety system |
+| Equipment protocol | 🟠 | Speaks the protocol of its equipment; checked against fakes and simulators only, never against the real machine |
 | Documentation | 🟢 | README in eight languages, checked against the manifest on every change |
 
 ## 🎯 Overview
