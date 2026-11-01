@@ -12,7 +12,7 @@ fi
 set -euo pipefail
 cd "$(dirname "$0")"
 printf '%s\n' '*********************************************************************' \
-  '* HYDRA-UMC-BRIDGE-ROS2 - BUILD TEST (NO VERSION CHANGE)           *' \
+  '* HYDRA-UMC-BRIDGE-ROS2 - BUILD TEST (NO VERSION CHANGE)            *' \
   '* 1. Compile Python source.  2. Run deterministic safety tests.    *' \
   '*********************************************************************'
 python3 tools/build_test.py

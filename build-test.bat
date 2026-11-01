@@ -21,7 +21,7 @@ if defined CI set "KEEP_OPEN=ver >nul"
 if "%HYDRA_UMC_CI%"=="1" set "KEEP_OPEN=ver >nul"
 cd /d "%~dp0"
 echo *********************************************************************
-echo * HYDRA-UMC-BRIDGE-ROS2 - BUILD TEST (NO VERSION CHANGE)           *
+echo * HYDRA-UMC-BRIDGE-ROS2 - BUILD TEST (NO VERSION CHANGE)            *
 echo * 1. Compile Python source.  2. Run deterministic safety tests.    *
 echo *********************************************************************
 where py >nul 2>&1 && (py -3 tools\build_test.py) || (python tools\build_test.py)
