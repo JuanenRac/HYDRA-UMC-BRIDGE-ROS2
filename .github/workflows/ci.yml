@@ -10,9 +10,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
-        with: {repository: JuanenRac/HYDRA-UMC-SDK, path: .hydra-umc-sdk-contract, ref: v0.5.1}
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with: {repository: JuanenRac/HYDRA-UMC-SDK, path: .hydra-umc-sdk-contract, ref: v0.5.1, persist-credentials: false}
       - name: Run the baseline steps of the family
         uses: ./.github/actions/hydra-baseline
         with:
