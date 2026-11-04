@@ -21,5 +21,9 @@
   "native_version": {
     "file": "pyproject.toml",
     "pattern": "^version\\s*=\\s*\"(\\d+)\\.(\\d+)\\.(\\d+)\""
-  }
+  },
+  "depends_on": [
+    "HYDRA-UMC-SDK",
+    "HYDRA-UMC-SERVER"
+  ]
 }
