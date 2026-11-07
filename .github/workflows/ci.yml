@@ -14,7 +14,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with: {repository: JuanenRac/HYDRA-UMC-SDK, path: .hydra-umc-sdk-contract, ref: v0.5.8, persist-credentials: false}
+        with: {repository: JuanenRac/HYDRA-UMC-SDK, path: .hydra-umc-sdk-contract, ref: v0.5.9, persist-credentials: false}
       - name: Run the baseline steps of the family
         uses: ./.github/actions/hydra-baseline
         with:
