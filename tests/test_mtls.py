@@ -14,6 +14,7 @@ import ssl
 import subprocess
 import tempfile
 import threading
+import time
 import unittest
 from pathlib import Path
 
@@ -188,6 +189,9 @@ class HandshakeTests(unittest.TestCase):
         with self.assertRaises((ssl.SSLError, OSError)):
             self.connect(context, port)
             # TLS 1.3 reports the refusal on the first read
+        deadline = time.time() + 5
+        while not results and time.time() < deadline:
+            time.sleep(0.05)  # the server thread notes its refusal a moment after the client sees it
         self.assertTrue(results and results[0][0] == "refused")
 
     def test_a_server_from_another_ca_is_refused_by_the_bridge(self):
