@@ -37,6 +37,7 @@ def main() -> int:
     environment["PYTHONPATH"] = os.pathsep.join((str(ROOT / "src"), str(sdk_root / "clients" / "python" / "src")))
     run(sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v", env=environment)
     run(sys.executable, "tools/inspect_interface_plan.py", "--verify-fixture", env=environment)
+    run(sys.executable, "tools/inspect_interface_plan.py", "--verify-contract", env=environment)
     return 0
 
 

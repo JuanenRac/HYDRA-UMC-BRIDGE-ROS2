@@ -24,7 +24,7 @@ workflow named "Simulation bench" does exactly this on a clean Linux runner on e
 | `tests/test_broker_integration.py` | the same dispatch against a real MQTT broker; skipped unless the broker checkout is present |
 | `tests/test_global_stop_broker.py` | the global stop over a real broker; skipped unless the broker checkout is present |
 
-The workflow also runs `python tools/inspect_interface_plan.py --verify-fixture`, so the interface plan fixture cannot drift from the code.
+The workflow also runs `python tools/inspect_interface_plan.py --verify-fixture`, so the interface plan fixture cannot drift from the code, and `python tools/inspect_interface_plan.py --verify-contract`, which reads the `.msg`, `.srv` and `.action` files of `interfaces/hydra_umc_interfaces` and compares them with the SDK and with `tests/fixtures/interface-contract-v1.json`.
 
 The broker scenarios start a real MQTT broker from a checkout of HYDRA-UMC-MQTT-BROKER (`HYDRA_UMC_TEST_BROKER_DIR`); the simulation job does not install it, so
 those cases skip themselves there and run in the normal test run on a machine that has the broker.

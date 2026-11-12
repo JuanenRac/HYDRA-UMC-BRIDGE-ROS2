@@ -42,6 +42,22 @@ documents the QoS a future rclpy adapter must set on both the publisher and
 the subscriber side (ROS 2, unlike ROS 1, requires both to declare it) - it
 does not itself prove any live DDS/QoS behavior.
 
+## The ROS 2 interface package
+
+`interfaces/hydra_umc_interfaces` is a plain `ament_cmake` package with the three types the plan needs and the standard
+ones cannot express: `srv/InspectCell` (the read-only question to `inspect_service`), `action/ExecuteCellJob` (one
+phase of a job on `job_action`: identifiers, the phase and the parameters as two arrays of strings, answered with
+whether it was accepted and the state of the cell) and `msg/CellStatus` (the states a cell reports). The string constants
+of the phases and the states are the values of the SDK, an `ABORT` is never a goal (it is the safe-stop service), a goal
+never says what state the machine is in (it is read, never told) and no field can carry a pose, a trajectory, a velocity,
+a joint or a torque.
+
+`hydra_umc_bridge_ros2.interface_contract` reads those files without ROS 2 and checks all of it;
+`python tools/inspect_interface_plan.py --verify-contract` compares the result with the published
+`tests/fixtures/interface-contract-v1.json`. Changing an interface means a new fixture version, as for the plan.
+Building the package with `colcon` and a client or server that uses these types are not done yet: the bridge still
+reaches ROS 2 only through `std_srvs/Trigger` and `std_msgs/String`, and nothing was run on a ROS 2 installation.
+
 ## Compatible software
 
 The planned northbound/southbound boundary is for ROS 2 distributions and applications that provide their own documented topics, services or actions: Nav2-based mobile robots, MoveIt-capable manipulators, simulation systems such as Gazebo, and custom ROS 2 nodes. Compatibility means adapting their public ROS 2 interfaces through a separately deployed adapter after an interface contract is selected; it does **not** mean that this repository controls them today.

@@ -1,0 +1,92 @@
+{
+  "interfaces": {
+    "hydra_umc_interfaces/action/ExecuteCellJob": {
+      "sections": [
+        {
+          "constants": {
+            "PHASE_COMPLETE": "COMPLETE",
+            "PHASE_LOAD": "LOAD",
+            "PHASE_PREPARE": "PREPARE",
+            "PHASE_PROCESS": "PROCESS",
+            "PHASE_UNLOAD": "UNLOAD"
+          },
+          "fields": [
+            "string job_id",
+            "string idempotency_key",
+            "string source",
+            "string phase",
+            "string[] parameter_keys",
+            "string[] parameter_values"
+          ]
+        },
+        {
+          "constants": {},
+          "fields": [
+            "bool accepted",
+            "string cell_state",
+            "string reason"
+          ]
+        },
+        {
+          "constants": {},
+          "fields": [
+            "string phase",
+            "string detail"
+          ]
+        }
+      ],
+      "type": "hydra_umc_interfaces/action/ExecuteCellJob"
+    },
+    "hydra_umc_interfaces/msg/CellStatus": {
+      "sections": [
+        {
+          "constants": {
+            "CELL_FAULT": "FAULT",
+            "CELL_INHIBITED": "INHIBITED",
+            "CELL_READY": "READY",
+            "CELL_SAFE_STOP": "SAFE_STOP",
+            "MACHINE_FAULT": "FAULT",
+            "MACHINE_HOLDING": "HOLDING",
+            "MACHINE_IDLE": "IDLE",
+            "MACHINE_OFFLINE": "OFFLINE",
+            "MACHINE_RUNNING": "RUNNING",
+            "MACHINE_SAFE_STOP": "SAFE_STOP",
+            "MACHINE_STOPPED": "STOPPED"
+          },
+          "fields": [
+            "string cell_state",
+            "string machine_state",
+            "string job_id"
+          ]
+        }
+      ],
+      "type": "hydra_umc_interfaces/msg/CellStatus"
+    },
+    "hydra_umc_interfaces/srv/InspectCell": {
+      "sections": [
+        {
+          "constants": {},
+          "fields": [
+            "string job_id"
+          ]
+        },
+        {
+          "constants": {},
+          "fields": [
+            "bool success",
+            "string cell_state",
+            "string machine_state",
+            "string message"
+          ]
+        }
+      ],
+      "type": "hydra_umc_interfaces/srv/InspectCell"
+    }
+  },
+  "package": "hydra_umc_interfaces",
+  "plan_types": {
+    "inspect_service": "hydra_umc_interfaces/srv/InspectCell",
+    "job_action": "hydra_umc_interfaces/action/ExecuteCellJob"
+  },
+  "schema_version": "1.0"
+}

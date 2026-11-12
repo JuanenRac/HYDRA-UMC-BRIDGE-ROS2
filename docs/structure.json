@@ -56,6 +56,19 @@
             "zh": "MQTT 命令、状态与安全停止传输",
             "pt": "transporte MQTT de comandos, estado e paragem segura"
           }
+        },
+        {
+          "name": "interface_contract.py",
+          "desc": {
+            "en": "reads and checks the .msg, .srv and .action files",
+            "es": "lee y comprueba los ficheros .msg, .srv y .action",
+            "de": "liest und prüft die .msg-, .srv- und .action-Dateien",
+            "fr": "lit et vérifie les fichiers .msg, .srv et .action",
+            "it": "legge e controlla i file .msg, .srv e .action",
+            "ja": ".msg・.srv・.action ファイルの読み取りと検査",
+            "zh": "读取并检查 .msg、.srv 和 .action 文件",
+            "pt": "lê e verifica os ficheiros .msg, .srv e .action"
+          }
         }
       ]
     },
@@ -78,14 +91,27 @@
         {
           "name": "tests/",
           "desc": {
-            "en": "81 tests, rclpy replaced by a stand-in",
-            "es": "81 pruebas, con rclpy sustituido por un doble",
-            "de": "81 Tests, rclpy durch einen Ersatz ersetzt",
-            "fr": "81 tests, rclpy remplacé par un substitut",
-            "it": "81 test, con rclpy sostituito da un surrogato",
-            "ja": "81 件（rclpy は代替物）",
-            "zh": "81 项测试（rclpy 用替身代替）",
-            "pt": "81 testes, com o rclpy substituído por um dublê"
+            "en": "140 tests, rclpy replaced by a stand-in",
+            "es": "140 pruebas, con rclpy sustituido por un doble",
+            "de": "140 Tests, rclpy durch einen Ersatz ersetzt",
+            "fr": "140 tests, rclpy remplacé par un substitut",
+            "it": "140 test, con rclpy sostituito da un surrogato",
+            "ja": "140 件（rclpy は代替物）",
+            "zh": "140 项测试（rclpy 用替身代替）",
+            "pt": "140 testes, com o rclpy substituído por um dublê"
+          }
+        },
+        {
+          "name": "interfaces/",
+          "desc": {
+            "en": "ROS 2 package with the .msg, .srv and .action types",
+            "es": "paquete ROS 2 con los tipos .msg, .srv y .action",
+            "de": "ROS-2-Paket mit den Typen .msg, .srv und .action",
+            "fr": "paquet ROS 2 avec les types .msg, .srv et .action",
+            "it": "pacchetto ROS 2 con i tipi .msg, .srv e .action",
+            "ja": ".msg・.srv・.action 型を持つ ROS 2 パッケージ",
+            "zh": "含 .msg、.srv、.action 类型的 ROS 2 包",
+            "pt": "pacote ROS 2 com os tipos .msg, .srv e .action"
           }
         },
         {

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<!-- HYDRA-UMC-BRIDGE-ROS2 - hydra_umc_interfaces/package.xml. GPL-3.0-or-later - see LICENSE -->
+<package format="3">
+  <name>hydra_umc_interfaces</name>
+  <version>0.1.0</version>
+  <description>Message, service and action types of the HYDRA-UMC ROS 2 bridge: high-level cell phases, never raw motion.</description>
+  <maintainer email="electrohobby3d@gmail.com">JuanenRac (Electro Hobby 3D)</maintainer>
+  <license>GPL-3.0-or-later</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

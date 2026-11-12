@@ -1,0 +1,26 @@
+# HYDRA-UMC-BRIDGE-ROS2 - hydra_umc_interfaces/action/ExecuteCellJob
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+#
+# One correlated, high-level phase of a cell job on /hydra_umc/execute_cell_job.
+# The goal names a phase, never a raw motion; an ABORT is not sent here but to
+# /hydra_umc/request_safe_stop. The values below are the ones of the SDK
+# (JobPhase) and the contract check fails when they drift.
+string PHASE_PREPARE="PREPARE"
+string PHASE_LOAD="LOAD"
+string PHASE_PROCESS="PROCESS"
+string PHASE_UNLOAD="UNLOAD"
+string PHASE_COMPLETE="COMPLETE"
+string job_id
+string idempotency_key
+string source
+string phase
+string[] parameter_keys
+string[] parameter_values
+---
+bool accepted
+string cell_state
+string reason
+---
+string phase
+string detail

@@ -27,7 +27,22 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--verify-fixture", action="store_true", help="verify the published v1.1 fixture")
+    parser.add_argument("--verify-contract", action="store_true", help="verify the .msg/.srv/.action files against the SDK and the published fixture")
     args = parser.parse_args()
+    if args.verify_contract:
+        from hydra_umc_bridge_ros2.interface_contract import InterfaceContractError, contract  # noqa: E402
+
+        try:
+            current = contract(ROOT / "interfaces" / "hydra_umc_interfaces")
+        except InterfaceContractError as error:
+            print(f"ROS2_INTERFACE_CONTRACT=FAIL {error}", file=sys.stderr)
+            return 1
+        expected = json.loads((ROOT / "tests" / "fixtures" / "interface-contract-v1.json").read_text(encoding="utf-8"))
+        if expected != current:
+            print("ROS2_INTERFACE_CONTRACT=FAIL fixture differs from the interface files", file=sys.stderr)
+            return 1
+        print("ROS2_INTERFACE_CONTRACT=PASS schema=1.0 fixture=interface-contract-v1.json")
+        return 0
     plan = Ros2Coordinator().interface_plan().to_dict()
     if args.verify_fixture:
         fixture = ROOT / "tests" / "fixtures" / "interface-plan-v1.1.json"

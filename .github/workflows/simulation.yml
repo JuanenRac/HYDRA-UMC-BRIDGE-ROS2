@@ -57,3 +57,7 @@ jobs:
         env:
           PYTHONPATH: "${{ github.workspace }}/src:${{ github.workspace }}/.hydra-umc-sdk-contract/clients/python/src"
         run: python tools/inspect_interface_plan.py --verify-fixture
+      - name: Verify the .msg, .srv and .action files
+        env:
+          PYTHONPATH: "${{ github.workspace }}/src:${{ github.workspace }}/.hydra-umc-sdk-contract/clients/python/src"
+        run: python tools/inspect_interface_plan.py --verify-contract

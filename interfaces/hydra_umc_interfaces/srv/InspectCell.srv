@@ -1,0 +1,12 @@
+# HYDRA-UMC-BRIDGE-ROS2 - hydra_umc_interfaces/srv/InspectCell
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+#
+# Read-only question to /hydra_umc/inspect_cell: what is the state of the cell
+# and of the machine. It starts nothing and moves nothing.
+string job_id
+---
+bool success
+string cell_state
+string machine_state
+string message
