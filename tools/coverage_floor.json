@@ -1,0 +1,9 @@
+[
+  {
+    "stack": "python",
+    "floor": 95,
+    "source": "src/hydra_umc_bridge_ros2",
+    "tests": "tests",
+    "pythonpath": "src"
+  }
+]
