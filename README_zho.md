@@ -18,14 +18,14 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
-  <img src="https://img.shields.io/badge/Tests-140%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-155%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.7-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-> **诚实检查——今天真正可运行的部分：** 无依赖的协调核心（`coordinator.py` 中的 `Ros2Coordinator`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）、面向 `std_srvs/Trigger` 和 `std_msgs/String` 的真实（延迟导入的）`rclpy` 传输层（`rclpy_transport.py` 中的 `Ros2SafeStopClient`/`Ros2StateSubscriber`），以及 MQTT 命令/状态传输（`mqtt_transport.py`）都是真实的，并由 140 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。以上这些都从未针对真实的 ROS 2 安装、真实的 DDS 网络或真实的 MQTT broker 进行过验证——`test_rclpy_transport.py` 是针对一个伪造的节点/发布者运行的，`test_mqtt_transport.py` 是针对一个伪造的 broker 客户端运行的，因此这些测试甚至不需要安装 `rclpy`/`std_srvs`/`std_msgs` 就能通过。自定义的 `.srv`/`.action` 契约 `inspect_service`/`job_action` 已写在 `interfaces/hydra_umc_interfaces` 中，并在没有 ROS 2 的情况下与 SDK 核对 (`interface_contract.py`)，但目前还没有客户端使用它们，该包也从未用 `colcon` 构建过。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。 MQTT 传输层也已在开发机器上针对真实的 HYDRA-UMC-MQTT-BROKER 运行过(`tests/test_broker_integration.py`,未安装 broker 时会跳过):QoS 0、1、2 的发布与订阅、保留的可用性及其遗嘱消息,以及 broker 停止后重新启动时的恢复。
+> **诚实检查——今天真正可运行的部分：** 无依赖的协调核心（`coordinator.py` 中的 `Ros2Coordinator`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）、面向 `std_srvs/Trigger` 和 `std_msgs/String` 的真实（延迟导入的）`rclpy` 传输层（`rclpy_transport.py` 中的 `Ros2SafeStopClient`/`Ros2StateSubscriber`），以及 MQTT 命令/状态传输（`mqtt_transport.py`）都是真实的，并由 155 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。以上这些都从未针对真实的 ROS 2 安装、真实的 DDS 网络或真实的 MQTT broker 进行过验证——`test_rclpy_transport.py` 是针对一个伪造的节点/发布者运行的，`test_mqtt_transport.py` 是针对一个伪造的 broker 客户端运行的，因此这些测试甚至不需要安装 `rclpy`/`std_srvs`/`std_msgs` 就能通过。自定义的 `.srv`/`.action` 契约 `inspect_service`/`job_action` 已写在 `interfaces/hydra_umc_interfaces` 中，并在没有 ROS 2 的情况下与 SDK 核对 (`interface_contract.py`)，但目前还没有客户端使用它们，该包也从未用 `colcon` 构建过。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。 MQTT 传输层也已在开发机器上针对真实的 HYDRA-UMC-MQTT-BROKER 运行过(`tests/test_broker_integration.py`,未安装 broker 时会跳过):QoS 0、1、2 的发布与订阅、保留的可用性及其遗嘱消息,以及 broker 停止后重新启动时的恢复。
 
 > **安全与安防现状:**本生态系统不是经认证的安全系统。目前尚无硬件 E-STOP 通路,没有由固件强制执行的限位或联锁,也没有经过验证的运动指令;固件映像使用 CRC-32 和 Ed25519 签名校验,发布构建会拒绝已公开的开发密钥(中继之后的工具头和扩展板仍运行 URTC 的引导程序,它们使用共享密钥的 HMAC-SHA256 而不是签名);TLS 与双向 TLS 均为可选项,默认关闭;自制电路板尚未组装或测试。在依赖此处任何说法来保障人身安全之前,请先阅读[安全基线](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)和[威胁模型](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)。
 
@@ -37,7 +37,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | 版本 | `0.1.7` |
 | 成熟度 | 可用 |
-| 测试 | 140 (`python tools/build_test.py`) |
+| 测试 | 155 (`python tools/build_test.py`) |
 | 技术栈 | Python / ROS 2 / rclpy / HYDRA-UMC-SDK |
 | 目标 | HYDRA-UMC 工作单元的 Raspberry Pi CM5 |
 | 真实硬件 | 仅模拟：使用模拟器、替身或仿真测试；此版本没有在真实硬件上运行的记录 |
@@ -53,7 +53,7 @@ GPL-3.0-or-later - see LICENSE
 | 领域 | 状态 | 在这里的含义 |
 |---|---|---|
 | 软件 | 🟡 | 主要用途可用；上面的诚实性检查列出了仍然缺少的内容 |
-| 测试 | 🟢 | 140 项自动测试，每次变更都会运行 |
+| 测试 | 🟢 | 155 项自动测试，每次变更都会运行 |
 | 真实硬件 | 🟠 | 仅模拟：使用模拟器、替身或仿真测试；此版本没有在真实硬件上运行的记录 |
 | 接口与协议 | 🟡 | 提供的路由或消息已有文档，并用客户端测试过；尚未被所有客户端使用 |
 | 集成 | 🟠 | 其消息和路由已对照 SDK 的共享契约检查；尚未与真实设备一起运行 |
@@ -115,6 +115,7 @@ flowchart LR
 * ✅ **观测到的机器状态、保留消息与重复键：** 桥接器一旦跟随 ROS 2 状态主题，共享闸门就使用机器上报的状态，而不是作业中写的 `machine_state`（任何人都能在代理上发布的消息），从未收到消息的机器按 OFFLINE 处理；`handle_message()` 会忽略保留消息（代理在每次重连时都会重放），若传入 `IdempotencyStore`，对重复的 `idempotency_key` 返回第一次的答复。*（已实现，已在 `tests/test_intake.py` 中测试）*
 * ✅ **能承受输入的消息循环、真正被转动的节点、会过期的状态:** `handle_message()` 绝不抛出异常(过大或嵌套很深的 JSON 以及任何意外故障都会作为拒绝返回);`cmd/job` 与其他桥接一样用 `allowed` 回答(并保留原有的 `accepted`);`ABORT` 作业会明确说明它只是计划,真正的停止是 `cmd/safe_stop`。`run_forever()` 在独立线程中转动节点(`spin_node_in_background()`,使状态主题真正被送达),复用同一个服务客户端,在永不排在其他命令之后的通道上执行 `cmd/safe_stop`,在 `availability` 上留下 Last Will,用规范化的 `machine_state` 和 `observed_at` 时间重新发布状态,并在无法订阅 ROS 2 状态主题时拒绝启动;`observed_max_age_seconds` 让不再被重新发布的状态视为 OFFLINE(默认关闭)。*(已实现,已用替身测试;从未针对真实的 ROS 2 图运行,因此执行器和 QoS 的行为未经验证)*
 * ✅ **跟随全局停止（默认关闭）:** 设置 `HYDRA_UMC_ROS2_GLOBAL_STOP=1` 后，桥接读取服务器在 `hydra/swarm/safety/estop` 上的保留通知；通知为 `SAFE_STOP` 或无法读取时，它会带原因拒绝：任务（中止放行）。停止命令和只读请求照常工作，只有 `READY` 才能解除拒绝。*（已实现，已对真实代理测试；从未与真实服务器一起运行）*
+* ✅ **面向服务器的客户端证书（双向 TLS），默认关闭：** 设置 `HYDRA_UMC_ROS2_MTLS=1` 后，桥接出示证书、用一个 CA 校验服务器，并拒绝其他用户可读或位于 git 工作树内的密钥（`mtls.py`）。*（已实现，已针对要求证书的本地 TLS 服务器测试；从未对真实 broker 运行）*
 
 ## 🔒 安全与防护
 
@@ -146,6 +147,7 @@ flowchart LR
 
 | 变量 | 默认值 | 设置内容 |
 |---|---|---|
+| `HYDRA_UMC_ROS2_MTLS` | 关闭 | `1` 使桥接向服务器出示客户端证书（双向 TLS），并仅用一个 CA 校验服务器证书，TLS 1.2 或更高。需要绝对路径 `HYDRA_UMC_ROS2_MTLS_CA`、`HYDRA_UMC_ROS2_MTLS_CERT` 和 `HYDRA_UMC_ROS2_MTLS_KEY`；若其他用户可读取密钥（须为 0600 模式）或密钥位于 git 工作树内，则拒绝，且不能混用 SDK 的 `HYDRA_MQTT_TLS*` 设置 |
 | `HYDRA_UMC_ROS2_GLOBAL_STOP` | 关闭 | `1` 跟随服务器的全局停止：只要保留主题 `hydra/swarm/safety/estop` 上最新的通知是 `SAFE_STOP`（或无法读取），桥接就会带原因拒绝：任务（中止放行）；只有 `READY` 才能解除。`HYDRA_UMC_ROS2_GLOBAL_STOP_TOPIC` 可更改主题，`HYDRA_UMC_ROS2_GLOBAL_STOP_STRICT=1` 会在收到第一条通知之前也拒绝 |
 | `HYDRA_MQTT_USERNAME` | 无 | MQTT 用户名；代理将其绑定到客户端 ID 前缀 |
 | `HYDRA_MQTT_PASSWORD` | 无 | 密码；只能与用户名一起使用 |
@@ -182,7 +184,7 @@ run_forever(bridge, host="192.168.0.180")
 
 ## 🧪 测试
 
-运行 `python tools/build_test.py` 会执行 140 个自动 `unittest` 用例（同时编译每个模块）。测试不需要硬件、网络或可选软件包：需要 `paho-mqtt`、`pyserial` 或厂商库的用例使用替身，缺少软件包时则跳过。
+运行 `python tools/build_test.py` 会执行 155 个自动 `unittest` 用例（同时编译每个模块）。测试不需要硬件、网络或可选软件包：需要 `paho-mqtt`、`pyserial` 或厂商库的用例使用替身，缺少软件包时则跳过。
 
 | 测试文件 | 测试数 | 覆盖内容 |
 |---|---|---|
@@ -190,6 +192,7 @@ run_forever(bridge, host="192.168.0.180")
 | `test_transport_limits.py` | - | MQTT 传输的限制（丢弃最旧等待指令的有界队列、从不作用于停止动词的负载上限、首次连接时带抖动的指数退避），以及取自共享 SDK 而非副本的全局停止守卫；除非设置开启，否则这些限制处于关闭状态 |
 | `test_broker_integration.py`, `broker_harness.py` | - | 在空闲本地端口上对真实 HYDRA-UMC-MQTT-BROKER 的 MQTT 客户端测试：通过客户端下发的指令、保留状态与遗嘱，以及代理掉线再恢复后的回路；缺少 Node.js、`paho-mqtt` 或已安装的代理（`HYDRA_UMC_TEST_BROKER_DIR`，默认是相邻文件夹）时会自动跳过 |
 | `test_coordinator.py`, `test_intake.py` | - | 任务到接口的映射与任务接收 |
+| `test_mtls.py` | - | 客户端证书：设置、密钥的模式与位置，以及与要求证书的本地 TLS 服务器的真实握手 |
 | `test_interface_contract.py` | - | .msg、.srv 和 .action 文件：仅内置类型，没有可能携带运动的字段，阶段和状态常量与 SDK 相同 |
 | `test_rclpy_transport.py` | - | 两个 rclpy 接口对 rclpy 替身 |
 | `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_edge_cases.py` | - | 主题分发、环境凭据、恶意客户端、边界情况 |
@@ -239,8 +242,9 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── coordinator.py             任务到具名 ROS 2 接口，绝不发原始运动
 │   ├── rclpy_transport.py         两个标准类型的 rclpy 接口
 │   ├── mqtt_transport.py          MQTT 命令、状态与安全停止传输
+│   ├── mtls.py                    面向服务器的客户端证书（双向 TLS）
 │   └── interface_contract.py      读取并检查 .msg、.srv 和 .action 文件
-├── tests/                         140 项测试（rclpy 用替身代替）
+├── tests/                         155 项测试（rclpy 用替身代替）
 ├── interfaces/                    含 .msg、.srv、.action 类型的 ROS 2 包
 ├── docs/                          桥接指南
 ├── tools/                         构建与测试运行器、版本提升、CI 校验、README 与图片的生成和检查

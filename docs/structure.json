@@ -58,6 +58,19 @@
           }
         },
         {
+          "name": "mtls.py",
+          "desc": {
+            "en": "client certificate for the server (mutual TLS)",
+            "es": "certificado de cliente para el servidor (TLS mutuo)",
+            "de": "Client-Zertifikat für den Server (gegenseitiges TLS)",
+            "fr": "certificat client pour le serveur (TLS mutuel)",
+            "it": "certificato client per il server (TLS reciproco)",
+            "ja": "サーバー向けクライアント証明書（相互 TLS）",
+            "zh": "面向服务器的客户端证书（双向 TLS）",
+            "pt": "certificado de cliente para o servidor (TLS mútuo)"
+          }
+        },
+        {
           "name": "interface_contract.py",
           "desc": {
             "en": "reads and checks the .msg, .srv and .action files",
@@ -91,14 +104,14 @@
         {
           "name": "tests/",
           "desc": {
-            "en": "140 tests, rclpy replaced by a stand-in",
-            "es": "140 pruebas, con rclpy sustituido por un doble",
-            "de": "140 Tests, rclpy durch einen Ersatz ersetzt",
-            "fr": "140 tests, rclpy remplacé par un substitut",
-            "it": "140 test, con rclpy sostituito da un surrogato",
-            "ja": "140 件（rclpy は代替物）",
-            "zh": "140 项测试（rclpy 用替身代替）",
-            "pt": "140 testes, com o rclpy substituído por um dublê"
+            "en": "155 tests, rclpy replaced by a stand-in",
+            "es": "155 pruebas, con rclpy sustituido por un doble",
+            "de": "155 Tests, rclpy durch einen Ersatz ersetzt",
+            "fr": "155 tests, rclpy remplacé par un substitut",
+            "it": "155 test, con rclpy sostituito da un surrogato",
+            "ja": "155 件（rclpy は代替物）",
+            "zh": "155 项测试（rclpy 用替身代替）",
+            "pt": "155 testes, com o rclpy substituído por um dublê"
           }
         },
         {

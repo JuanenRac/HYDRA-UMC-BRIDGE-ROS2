@@ -18,14 +18,14 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
-  <img src="https://img.shields.io/badge/Tests-140%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-155%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.7-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-> **Vérification d'honnêteté - ce qui fonctionne réellement aujourd'hui :** le cœur de coordination sans dépendance (`coordinator.py` avec `Ros2Coordinator`, faisant passer chaque envoi par le propre `evaluate_job()` de `HYDRA-UMC-SDK`), le vrai transport `rclpy` (importé de façon paresseuse) pour `std_srvs/Trigger` et `std_msgs/String` (`rclpy_transport.py` avec `Ros2SafeStopClient`/`Ros2StateSubscriber`), et le transport de commandes/état MQTT (`mqtt_transport.py`) sont réels et couverts par 140 tests unitaires qui passent (`python tools/build_test.py` - `test_coordinator.py`, `test_rclpy_transport.py`, `test_mqtt_transport.py`, `test_intake.py`, `test_mqtt_environment.py`, `test_hardening.py`). Rien de tout cela n'a été testé contre une vraie installation ROS 2, un vrai réseau DDS, ou un vrai broker MQTT - `test_rclpy_transport.py` tourne contre un nœud/éditeur factice et `test_mqtt_transport.py` contre un client de broker factice, si bien que `rclpy`/`std_srvs`/`std_msgs` n'ont même pas besoin d'être installés pour que ces tests passent. Les contrats personnalisés `.srv`/`.action` de `inspect_service`/`job_action` sont écrits dans `interfaces/hydra_umc_interfaces` et vérifiés sans ROS 2 par rapport au SDK (`interface_contract.py`), mais aucun client ne les utilise encore et le paquet n'a jamais été compilé avec `colcon`. Voir « Feuille de route et limites connues » ci-dessous, qui le dit déjà clairement, et `CHANGELOG.md` pour ce qui a été exactement livré jusqu'à présent. Le transport MQTT a aussi été exécuté contre un vrai HYDRA-UMC-MQTT-BROKER sur une machine de développement (`tests/test_broker_integration.py`, ignoré si aucun broker n'est installé) : publication et abonnement en QoS 0, 1 et 2, la disponibilité retenue et son dernier testament, et le retour après l'arrêt puis le redémarrage du broker.
+> **Vérification d'honnêteté - ce qui fonctionne réellement aujourd'hui :** le cœur de coordination sans dépendance (`coordinator.py` avec `Ros2Coordinator`, faisant passer chaque envoi par le propre `evaluate_job()` de `HYDRA-UMC-SDK`), le vrai transport `rclpy` (importé de façon paresseuse) pour `std_srvs/Trigger` et `std_msgs/String` (`rclpy_transport.py` avec `Ros2SafeStopClient`/`Ros2StateSubscriber`), et le transport de commandes/état MQTT (`mqtt_transport.py`) sont réels et couverts par 155 tests unitaires qui passent (`python tools/build_test.py` - `test_coordinator.py`, `test_rclpy_transport.py`, `test_mqtt_transport.py`, `test_intake.py`, `test_mqtt_environment.py`, `test_hardening.py`). Rien de tout cela n'a été testé contre une vraie installation ROS 2, un vrai réseau DDS, ou un vrai broker MQTT - `test_rclpy_transport.py` tourne contre un nœud/éditeur factice et `test_mqtt_transport.py` contre un client de broker factice, si bien que `rclpy`/`std_srvs`/`std_msgs` n'ont même pas besoin d'être installés pour que ces tests passent. Les contrats personnalisés `.srv`/`.action` de `inspect_service`/`job_action` sont écrits dans `interfaces/hydra_umc_interfaces` et vérifiés sans ROS 2 par rapport au SDK (`interface_contract.py`), mais aucun client ne les utilise encore et le paquet n'a jamais été compilé avec `colcon`. Voir « Feuille de route et limites connues » ci-dessous, qui le dit déjà clairement, et `CHANGELOG.md` pour ce qui a été exactement livré jusqu'à présent. Le transport MQTT a aussi été exécuté contre un vrai HYDRA-UMC-MQTT-BROKER sur une machine de développement (`tests/test_broker_integration.py`, ignoré si aucun broker n'est installé) : publication et abonnement en QoS 0, 1 et 2, la disponibilité retenue et son dernier testament, et le retour après l'arrêt puis le redémarrage du broker.
 
 > **État de la sûreté et de la cybersécurité :** cet écosystème n'est pas un système de sécurité certifié. Il n'existe pas encore de chaîne d'E-STOP matérielle, ni de limites ou de verrouillages imposés par le firmware, ni de commande de mouvement vérifiée ; les images de firmware sont contrôlées par CRC-32 et une signature Ed25519, et une compilation de version refuse les clés de développement publiées (les têtes d'outil et les cartes d'extension derrière le relais utilisent encore les chargeurs d'URTC, qui prennent un HMAC-SHA256 à clé partagée au lieu d'une signature) ; TLS et TLS mutuel sont optionnels et désactivés par défaut ; aucune carte propre n'a encore été assemblée ni testée. Lisez la [base de sécurité](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md) et le [modèle de menaces](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md) avant de vous fier à une affirmation d'ici pour la sécurité d'une personne.
 
@@ -37,7 +37,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.1.7` |
 | Maturité | Fonctionnel |
-| Tests | 140 (`python tools/build_test.py`) |
+| Tests | 155 (`python tools/build_test.py`) |
 | Technologie | Python / ROS 2 / rclpy / HYDRA-UMC-SDK |
 | Cible | Le Raspberry Pi CM5 d'une cellule HYDRA-UMC |
 | Sur matériel réel | Simulé seulement : testé avec des émulateurs, des doubles de test ou des simulateurs ; aucune exécution sur du matériel réel n'est consignée pour cette version |
@@ -53,7 +53,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 | Domaine | État | Ce que cela veut dire ici |
 |---|---|---|
 | Logiciel | 🟡 | Fonctionne pour son usage principal ; la vérification d'honnêteté ci-dessus liste ce qui manque encore |
-| Tests | 🟢 | 140 tests automatiques, exécutés à chaque modification |
+| Tests | 🟢 | 155 tests automatiques, exécutés à chaque modification |
 | Matériel réel | 🟠 | Simulé seulement : testé avec des émulateurs, des doubles de test ou des simulateurs ; aucune exécution sur du matériel réel n'est consignée pour cette version |
 | Interface et protocoles | 🟡 | Les routes ou les messages proposés sont documentés et testés avec un client ; tous les clients ne les ont pas encore utilisés |
 | Intégration | 🟠 | Ses messages et ses routes sont vérifiés par rapport aux contrats partagés du SDK ; il n'a pas fonctionné avec l'équipement réel |
@@ -115,6 +115,7 @@ flowchart LR
 * ✅ **État observé de la machine, messages retenus et clés répétées :** dès que le bridge suit le topic d'état ROS 2, la porte partagée utilise l'état rapporté par la machine au lieu du `machine_state` écrit dans le travail (un message que n'importe qui sur le broker peut publier), et une machine dont on n'a jamais eu de nouvelles compte comme OFFLINE ; `handle_message()` ignore les messages retenus (le broker les rejoue à chaque reconnexion) et, s'il reçoit un `IdempotencyStore`, répond à une `idempotency_key` répétée avec la première réponse. *(implémenté, testé dans `tests/test_intake.py`)*
 * ✅ **Une boucle de messages qui survit à son entrée, un nœud réellement tourné et un état qui peut périmer :** `handle_message()` ne lève jamais d'exception (un JSON trop gros ou très imbriqué et toute défaillance inattendue reviennent sous forme de refus) ; `cmd/job` répond avec `allowed` comme tous les autres bridges (et `accepted` comme avant) ; un travail `ABORT` dit clairement qu'il n'est qu'un plan et que l'arrêt réel est `cmd/safe_stop`. `run_forever()` fait tourner le nœud sur un fil dédié (`spin_node_in_background()`, pour que le topic d'état soit réellement livré), réutilise un unique client de service, exécute `cmd/safe_stop` sur une voie qui n'attend jamais derrière une autre commande, laisse un Last Will sur `availability`, republie l'état avec son `machine_state` normalisé et une heure `observed_at`, et refuse de démarrer si le topic d'état ROS 2 ne peut pas être souscrit ; `observed_max_age_seconds` fait compter comme OFFLINE un état qui n'est plus republié (désactivé par défaut). *(implémenté, testé avec des doublures ; jamais exécuté contre un vrai graphe ROS 2, donc le comportement de l'exécuteur et de la QoS n'est pas vérifié)*
 * ✅ **Suit l'arrêt global (désactivé par défaut):** avec `HYDRA_UMC_ROS2_GLOBAL_STOP=1`, le bridge lit l'annonce retenue du serveur sur `hydra/swarm/safety/estop` ; tant qu'elle dit `SAFE_STOP`, ou est illisible, il refuse avec un motif : un travail (un abandon passe). Les arrêts et les requêtes en lecture seule continuent de fonctionner et seul `READY` met fin au refus. *(implémenté, testé contre un vrai broker ; jamais exécuté avec un vrai serveur)*
+* ✅ **Certificat client pour le serveur (TLS mutuel), désactivé par défaut :** avec `HYDRA_UMC_ROS2_MTLS=1` le pont présente un certificat, vérifie le serveur contre une AC et refuse une clé lisible par d'autres utilisateurs ou située dans un arbre de travail git (`mtls.py`). *(implémenté, testé contre un serveur TLS local qui exige le certificat ; jamais exécuté contre le vrai broker)*
 
 ## 🔒 Sécurité et protection
 
@@ -146,6 +147,7 @@ Pour vérifier le plan d'interfaces sans ROS 2 : `python tools/inspect_interface
 
 | Variable | Par défaut | Ce qu'elle définit |
 |---|---|---|
+| `HYDRA_UMC_ROS2_MTLS` | désactivé | `1` fait présenter par le pont un certificat client au serveur (TLS mutuel) et vérifier le certificat du serveur contre une seule AC, TLS 1.2 ou plus récent. Exige les chemins absolus `HYDRA_UMC_ROS2_MTLS_CA`, `HYDRA_UMC_ROS2_MTLS_CERT` et `HYDRA_UMC_ROS2_MTLS_KEY` ; la clé est refusée si d'autres utilisateurs peuvent la lire (mode 0600) ou si elle se trouve dans un arbre de travail git, et les réglages `HYDRA_MQTT_TLS*` du SDK ne peuvent pas s'y mêler |
 | `HYDRA_UMC_ROS2_GLOBAL_STOP` | désactivé | `1` suit l'arrêt global du serveur : tant que la dernière annonce du sujet retenu `hydra/swarm/safety/estop` dit `SAFE_STOP` (ou est illisible), le bridge refuse avec un motif : un travail (un abandon passe) ; seul `READY` y met fin. `HYDRA_UMC_ROS2_GLOBAL_STOP_TOPIC` change le sujet et `HYDRA_UMC_ROS2_GLOBAL_STOP_STRICT=1` refuse aussi tant que la première annonce n'est pas arrivée |
 | `HYDRA_MQTT_USERNAME` | aucun | Le nom d'utilisateur MQTT ; le broker le lie à un préfixe d'identifiant client |
 | `HYDRA_MQTT_PASSWORD` | aucun | Le mot de passe ; valable seulement avec le nom d'utilisateur |
@@ -182,7 +184,7 @@ Le nom d'utilisateur, le mot de passe et les fichiers TLS viennent des variables
 
 ## 🧪 Tests
 
-140 cas `unittest` automatiques s'exécutent avec `python tools/build_test.py` (qui compile aussi chaque module). Les tests n'ont besoin ni de matériel, ni de réseau, ni de paquet optionnel : ceux qui exigeraient `paho-mqtt`, `pyserial` ou une bibliothèque de fabricant utilisent un substitut ou sont ignorés si le paquet manque.
+155 cas `unittest` automatiques s'exécutent avec `python tools/build_test.py` (qui compile aussi chaque module). Les tests n'ont besoin ni de matériel, ni de réseau, ni de paquet optionnel : ceux qui exigeraient `paho-mqtt`, `pyserial` ou une bibliothèque de fabricant utilisent un substitut ou sont ignorés si le paquet manque.
 
 | Fichier de tests | Tests | Ce qu'il couvre |
 |---|---|---|
@@ -190,6 +192,7 @@ Le nom d'utilisateur, le mot de passe et les fichiers TLS viennent des variables
 | `test_transport_limits.py` | - | les limites du transport MQTT (une file bornée qui écarte l'ordre en attente le plus ancien, un plafond de charge qui ne s'applique jamais aux verbes d'arrêt, attente exponentielle avec gigue à la première connexion) et la garde de l'arrêt global prise du SDK partagé au lieu d'une copie ; les limites sont désactivées tant que les réglages ne les activent pas |
 | `test_broker_integration.py`, `broker_harness.py` | - | le client MQTT contre un vrai HYDRA-UMC-MQTT-BROKER sur un port local libre : un ordre via le client, l'état retenu et le testament, et le retour après la chute et le retour du broker ; il se saute quand Node.js, `paho-mqtt` ou le broker installé (`HYDRA_UMC_TEST_BROKER_DIR`, par défaut le dossier voisin) manquent |
 | `test_coordinator.py`, `test_intake.py` | - | passage du travail à l'interface et prise en charge des travaux |
+| `test_mtls.py` | - | certificat client : réglages, mode et emplacement de la clé, et une vraie poignée de main contre un serveur TLS local qui l'exige |
 | `test_interface_contract.py` | - | les fichiers .msg, .srv et .action : types de base seulement, rien qui puisse porter un mouvement, et constantes de phase et d'état égales à celles du SDK |
 | `test_rclpy_transport.py` | - | les deux interfaces rclpy contre un substitut de rclpy |
 | `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_edge_cases.py` | - | répartition des topics, identifiants de l'environnement, clients hostiles, cas limites |
@@ -239,8 +242,9 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── coordinator.py             travail vers une interface ROS 2 nommée, jamais de mouvement brut
 │   ├── rclpy_transport.py         les deux interfaces rclpy à types standard
 │   ├── mqtt_transport.py          transport MQTT des commandes, de l'état et de l'arrêt sûr
+│   ├── mtls.py                    certificat client pour le serveur (TLS mutuel)
 │   └── interface_contract.py      lit et vérifie les fichiers .msg, .srv et .action
-├── tests/                         140 tests, rclpy remplacé par un substitut
+├── tests/                         155 tests, rclpy remplacé par un substitut
 ├── interfaces/                    paquet ROS 2 avec les types .msg, .srv et .action
 ├── docs/                          guide du bridge
 ├── tools/                         exécuteur de build et de tests, montée de version, validateur CI, générateurs et vérifications des README et des images

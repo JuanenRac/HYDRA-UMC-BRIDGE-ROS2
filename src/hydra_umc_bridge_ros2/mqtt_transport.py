@@ -56,6 +56,9 @@ from typing import Any, Callable
 from hydra_umc_sdk.bridge_contract import BridgeError, CellState, MachineState, job_from_dict
 from hydra_umc_sdk.job_intake import IdempotencyStore
 from hydra_umc_sdk.bridge_transport import BridgeHardening, hardening_from_environment
+
+from .mtls import MutualTlsSettings, mqtt_module_for
+from .mtls import settings_from_environment as mtls_settings_from_environment
 from hydra_umc_sdk.bridge_transport import MessageDispatcher as SharedMessageDispatcher
 from hydra_umc_sdk.bridge_transport import MqttPublish, connect_with_retry, open_bridge_client  # noqa: F401
 
@@ -271,6 +274,7 @@ def run_forever(
     username: str | None = None,
     password: str | None = None,
     hardening: BridgeHardening | None = None,
+    mtls: MutualTlsSettings | None = None,
 ) -> None:
     """Connect to a real HYDRA-UMC-MQTT-BROKER, bridge the real ROS 2
     state topic onto it, and dispatch commands forever.
@@ -295,6 +299,9 @@ def run_forever(
     if password is not None and username is None:
         raise ValueError("password was given without a username - MQTT credentials need both")
 
+    # a client certificate for the server: off unless HYDRA_UMC_ROS2_MTLS=1 (see mtls.py); checked before anything connects
+    mqtt_module = mqtt_module_for(mtls if mtls is not None else mtls_settings_from_environment())
+
     # the limits of the transport are off unless the settings (the file of the service, else its environment) switch them on: see hydra_umc_sdk.bridge_transport.BridgeHardening
     hardening = hardening if hardening is not None else hardening_from_environment(GLOBAL_STOP_ENVIRONMENT_NAME)
     dispatcher = MessageDispatcher(bridge, **hardening.dispatcher_kwargs())  # type: ignore[arg-type]  # the keywords are ints; the stop verbs stay the default
@@ -309,6 +316,7 @@ def run_forever(
             dispatcher=dispatcher,
             username=username,
             password=password,
+            mqtt_module=mqtt_module,
             max_connect_attempts=max_connect_attempts,
             connect_retry_delay_seconds=connect_retry_delay_seconds,
             on_connected=follow_on_connect(guard) if isinstance(guard, GlobalStopGuard) else None,

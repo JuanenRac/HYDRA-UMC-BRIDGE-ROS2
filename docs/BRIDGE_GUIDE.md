@@ -42,6 +42,20 @@ documents the QoS a future rclpy adapter must set on both the publisher and
 the subscriber side (ROS 2, unlike ROS 1, requires both to declare it) - it
 does not itself prove any live DDS/QoS behavior.
 
+## Client certificate for the server (mutual TLS)
+
+Off unless `HYDRA_UMC_ROS2_MTLS=1`. When on, `mtls.py` builds one TLS context for the link to the broker of the server: TLS 1.2 or newer, the
+server certificate required and checked (including its host name) against the single CA in `HYDRA_UMC_ROS2_MTLS_CA`, and the client certificate
+`HYDRA_UMC_ROS2_MTLS_CERT` with its key `HYDRA_UMC_ROS2_MTLS_KEY` loaded. All three are absolute paths; nothing is kept in this repository. The key is
+refused when other users can read it (it must be mode 0600 or stricter; the check is skipped on Windows) and when it lies inside a git working tree, and giving
+the plain `HYDRA_MQTT_TLS*` settings of the SDK at the same time is an error, so one link is never set up two ways. `run_forever()` takes the settings from the
+environment (or a `mtls=` argument), checks them before anything connects and hands the context to every MQTT client it makes.
+
+On the server side the broker demands and verifies the certificate with `MQTT_TLS_REQUIRE_CLIENT_CERT=1` and `MQTT_TLS_CA`, and can bind the common name of
+the certificate to the client ID with `MQTT_TLS_CERT_IDENTITY=1`. The tests make a CA, a server and a client certificate with `openssl` and run real handshakes
+against a local TLS server that demands the certificate (accepted with the right certificate, refused with one from another CA, and the bridge refuses a server
+from another CA or with another name). Not run against the real broker.
+
 ## The ROS 2 interface package
 
 `interfaces/hydra_umc_interfaces` is a plain `ament_cmake` package with the three types the plan needs and the standard
