@@ -128,10 +128,10 @@ def parse(kind: str, name: str, text: str) -> Interface:
         raise InterfaceContractError(f"{kind}/{name}: expected {SEPARATORS[kind]} separator(s), found {len(sections) - 1}")
     built = tuple(Section(tuple(fields), dict(constants)) for fields, constants in sections)
     for section in built:
-        for field in section.fields:
+        for declared in section.fields:
             for word in MOTION_WORDS:
-                if word in field.name:
-                    raise InterfaceContractError(f"{kind}/{name}: field {field.name} would carry a motion ({word})")
+                if word in declared.name:
+                    raise InterfaceContractError(f"{kind}/{name}: field {declared.name} would carry a motion ({word})")
     return Interface(kind, name, built)
 
 
