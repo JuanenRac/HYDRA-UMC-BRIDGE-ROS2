@@ -22,6 +22,8 @@ workflow named "Simulation bench" does exactly this on a clean Linux runner on e
 | `tests/test_service_and_safety.py` | the service configuration and its ROS parameters, the 2 s expiry of the machine state, an `ABORT` job that calls the safe-stop service, the shared job intake, and the launch file, parameter file and systemd unit |
 | `tests/test_extensions.py` | the hook for optional extensions: the section parser, routing of claimed topics, the global stop on a moving verb, start and stop in `run_forever()` |
 | `tests/test_ext_diagnostics.py` | the diagnostics feed: summary, limits, silence, cleaning of texts, a seeded random stream, and that it claims no command topic |
+| `tests/test_ext_cell_status.py` | the cell status feed: how both states are worked out, every fail-closed path, the limits, a seeded random stream, and that nothing is published back |
+| `tests/ros2/test_ext_cell_status_ros2.py` | against a real rclpy in the container: real `CellStatus` messages for a seeded sequence with faults, a subscriber that joins late, and that the node has no subscription, service or client |
 | `tests/ros2/test_ext_diagnostics_ros2.py` | against a real rclpy in the container: a seeded stream of real `DiagnosticArray` messages, injected faults, silence, and that the node gains no publisher, service or client |
 | `tests/ros2/test_real_ros2.py` | against a real rclpy in the ROS 2 container of the workflow "ROS 2 bench" (skipped elsewhere): the generated interface types, the state topic and its expiry, the safe-stop service, the entry point |
 | `tests/test_coordinator.py` | the coordinator and its gate |

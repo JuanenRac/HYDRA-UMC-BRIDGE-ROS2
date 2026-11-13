@@ -20,6 +20,7 @@ value of the wrong type or names an extension that does not exist stops the star
 
 | Extension | Section | Direction | What it can do | Guide |
 |---|---|---|---|---|
+| Cell status | `cell_status` | HYDRA-UMC to ROS 2 | read only | `CELL_STATUS_FEED.md` |
 | Diagnostics | `diagnostics` | ROS 2 to HYDRA-UMC | read only | `DIAGNOSTICS_FEED.md` |
 
 ## What the hook gives an extension
