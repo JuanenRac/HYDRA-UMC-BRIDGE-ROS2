@@ -29,6 +29,7 @@ from typing import Callable
 from hydra_umc_sdk.bridge_contract import CellState, MachineState
 from hydra_umc_sdk.job_intake import IdempotencyStore
 
+from .extensions import ExtensionConfigError, build_extensions, parse_sections
 from .mqtt_transport import DEFAULT_OBSERVED_MAX_AGE_SECONDS, Ros2MqttBridge, run_forever
 from .rclpy_transport import create_ros2_node
 
@@ -67,6 +68,8 @@ class NodeConfig:
 class ServiceConfig:
     mqtt: MqttConfig = field(default_factory=MqttConfig)
     node: NodeConfig = field(default_factory=NodeConfig)
+    # the parsed settings of the optional extensions named in the file (extensions.py); none unless it names them
+    extensions: dict[str, object] = field(default_factory=dict)
 
 
 def _section(raw: object, kind: type, name: str):
@@ -98,10 +101,14 @@ def load_service_config(path: str | Path | None) -> ServiceConfig:
         raise ConfigError(f"cannot read {path}: {error}") from error
     if not isinstance(raw, dict):
         raise ConfigError("the configuration must be a JSON object")
-    unknown = sorted(set(raw) - {"mqtt", "node"})
+    unknown = sorted(set(raw) - {"mqtt", "node", "extensions"})
     if unknown:
         raise ConfigError(f"unknown keys: {', '.join(unknown)}")
-    config = ServiceConfig(_section(raw.get("mqtt"), MqttConfig, "mqtt"), _section(raw.get("node"), NodeConfig, "node"))
+    try:
+        extension_settings = parse_sections(raw.get("extensions"))
+    except ExtensionConfigError as error:
+        raise ConfigError(str(error)) from error
+    config = ServiceConfig(_section(raw.get("mqtt"), MqttConfig, "mqtt"), _section(raw.get("node"), NodeConfig, "node"), extension_settings)
     if not config.mqtt.host or not 0 < config.mqtt.port < 65536:
         raise ConfigError("'mqtt.host' and 'mqtt.port' must name a broker")
     if config.mqtt.max_connect_attempts < 1 or config.mqtt.connect_retry_delay_seconds < 0:
@@ -173,6 +180,7 @@ def build_bridge(config: ServiceConfig, node_factory: Callable[[str], object] = 
         abort_calls_safe_stop=settings.abort_calls_safe_stop,
     )
     holder.append(bridge)
+    build_extensions(config.extensions, bridge)
     return bridge
 
 
