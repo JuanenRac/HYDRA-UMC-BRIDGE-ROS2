@@ -25,6 +25,7 @@ workflow named "Simulation bench" does exactly this on a clean Linux runner on e
 | `tests/test_mqtt_transport.py` | the topic dispatch, QoS, idempotency and limits without a broker |
 | `tests/test_broker_integration.py` | the same dispatch against a real MQTT broker; skipped unless the broker checkout is present |
 | `tests/test_global_stop_broker.py` | the global stop over a real broker; skipped unless the broker checkout is present |
+| `tests/test_service_main_faults.py` | the start-up of the service when things go wrong: damaged configuration, missing or empty secret file, ROS 2 not installed, a transport loop that raises or ends (exit codes for systemd, the secret never printed) |
 
 The workflow also runs `python tools/inspect_interface_plan.py --verify-fixture`, so the interface plan fixture cannot drift from the code, and `python tools/inspect_interface_plan.py --verify-contract`, which reads the `.msg`, `.srv` and `.action` files of `interfaces/hydra_umc_interfaces` and compares them with the SDK and with `tests/fixtures/interface-contract-v1.json`.
 
