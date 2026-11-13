@@ -56,7 +56,7 @@ jobs:
           test_service_main_faults
           test_extensions
           test_ext_diagnostics
-          test_ext_fleet
+          test_ext_motion
           test_ext_cell_status
       - name: Verify the interface plan fixture
         env:
