@@ -209,7 +209,7 @@ class EntryPointTests(unittest.TestCase):
         "import json, sys, rclpy\n"
         "from hydra_umc_bridge_ros2.service import build_bridge, load_service_config\n"
         "rclpy.init(args=sys.argv)\n"
-        "bridge = build_bridge(load_service_config('config/bridge.json'))\n"
+        "bridge = build_bridge(load_service_config('docs/deploy/bridge.json'))\n"
         "print(json.dumps({'age': bridge._observed_max_age, 'abort': bridge.abort_calls_safe_stop, 'node': bridge.node.get_name()}))\n"
         "bridge.node.destroy_node()\n"
         "rclpy.shutdown()\n"
@@ -219,7 +219,7 @@ class EntryPointTests(unittest.TestCase):
         self.assertEqual(self.run_snippet(self.SNIPPET), {"age": 2.0, "abort": True, "node": "hydra_umc_bridge_ros2"})
 
     def test_the_ros_parameter_file_of_the_repository_is_read_by_the_node(self) -> None:
-        shipped = self.run_snippet(self.SNIPPET, "--ros-args", "--params-file", str(REPO / "config" / "bridge_params.yaml"))
+        shipped = self.run_snippet(self.SNIPPET, "--ros-args", "--params-file", str(REPO / "docs" / "deploy" / "bridge_params.yaml"))
         self.assertEqual(shipped, {"age": 2.0, "abort": True, "node": "hydra_umc_bridge_ros2"})
 
     def test_a_parameter_file_changes_the_values(self) -> None:
@@ -232,7 +232,7 @@ class EntryPointTests(unittest.TestCase):
     def test_the_launch_file_describes_the_service_process(self) -> None:
         import importlib.util
 
-        spec = importlib.util.spec_from_file_location("hydra_launch", REPO / "launch" / "hydra_umc_bridge_ros2.launch.py")
+        spec = importlib.util.spec_from_file_location("hydra_launch", REPO / "docs" / "deploy" / "hydra_umc_bridge_ros2.launch.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         description = module.generate_launch_description()

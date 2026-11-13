@@ -154,7 +154,7 @@ class IntakeTests(unittest.TestCase):
 
 class ServiceConfigTests(unittest.TestCase):
     def test_the_shipped_configuration_is_the_conservative_one(self) -> None:
-        config = load_service_config(REPO / "config" / "bridge.json")
+        config = load_service_config(REPO / "docs" / "deploy" / "bridge.json")
         self.assertEqual(config.node.observed_max_age_s, 2.0)
         self.assertTrue(config.node.abort_calls_safe_stop)
         self.assertEqual(config, load_service_config(None))
@@ -216,8 +216,8 @@ class ServiceConfigTests(unittest.TestCase):
         self.assertIs(bridge._cell_state(), CellState.SAFE_STOP)
 
     def test_a_missing_ros_install_is_a_clear_error_and_check_validates_without_opening(self) -> None:
-        self.assertEqual(main(["--check", "--config", str(REPO / "config" / "bridge.json")]), 0)
-        self.assertEqual(main(["--check", "--config", str(REPO / "config" / "no-such-file.json"), "--ros-args", "-p", "x:=1"]), 0)
+        self.assertEqual(main(["--check", "--config", str(REPO / "docs" / "deploy" / "bridge.json")]), 0)
+        self.assertEqual(main(["--check", "--config", str(REPO / "docs" / "deploy" / "no-such-file.json"), "--ros-args", "-p", "x:=1"]), 0)
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder, "c.json")
             path.write_text(json.dumps({"mqtt": {"port": 0}}), encoding="utf-8")
@@ -232,20 +232,20 @@ class ServiceConfigTests(unittest.TestCase):
 
 class DeploymentFilesTests(unittest.TestCase):
     def test_the_launch_file_compiles_and_names_the_service_and_its_files(self) -> None:
-        text = (REPO / "launch" / "hydra_umc_bridge_ros2.launch.py").read_text(encoding="utf-8")
+        text = (REPO / "docs" / "deploy" / "hydra_umc_bridge_ros2.launch.py").read_text(encoding="utf-8")
         compile(text, "launch", "exec")
         for needle in ("hydra_umc_bridge_ros2", "--params-file", "bridge_params.yaml", "bridge.json"):
             self.assertIn(needle, text)
 
     def test_the_parameter_file_holds_the_two_parameters_of_the_node(self) -> None:
-        text = (REPO / "config" / "bridge_params.yaml").read_text(encoding="utf-8")
+        text = (REPO / "docs" / "deploy" / "bridge_params.yaml").read_text(encoding="utf-8")
         self.assertIn("hydra_umc_bridge_ros2:", text)
         self.assertIn("ros__parameters:", text)
         self.assertIn("observed_max_age_s: 2.0", text)
         self.assertIn("abort_calls_safe_stop: true", text)
 
     def test_the_systemd_unit_restarts_on_failure_and_does_not_run_as_root(self) -> None:
-        text = (REPO / "deploy" / "hydra-umc-bridge-ros2.service").read_text(encoding="utf-8")
+        text = (REPO / "docs" / "deploy" / "hydra-umc-bridge-ros2.service").read_text(encoding="utf-8")
         for needle in ("Restart=on-failure", "User=hydra-umc", "NoNewPrivileges=true", "-m hydra_umc_bridge_ros2", "HYDRA_UMC_ROS2_CONFIG"):
             self.assertIn(needle, text)
         self.assertNotIn("User=root", text)

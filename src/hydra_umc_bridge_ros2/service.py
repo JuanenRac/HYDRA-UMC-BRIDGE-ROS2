@@ -5,10 +5,10 @@
 # =============================================================================
 """Start the ROS 2 bridge as a service: read the configuration, create the rclpy node, spin it on an executor of its own and serve the MQTT topics.
 
-`python -m hydra_umc_bridge_ros2 --config config/bridge.json` (or the launch file in `launch/`, or the systemd unit in `deploy/`) does what `run_forever()` needs done by hand:
+`python -m hydra_umc_bridge_ros2 --config docs/deploy/bridge.json` (or the launch file and the systemd unit next to it in `docs/deploy/`) does what `run_forever()` needs done by hand:
 it creates the node, takes the two ROS parameters `observed_max_age_s` and `abort_calls_safe_stop` from the ROS parameter system when a parameter file is given
-(`--ros-args --params-file config/bridge_params.yaml`; the value in the file of the configuration is the default), builds the bridge with `node_is_spinning=True`, and
-`run_forever()` spins the node on a `SingleThreadedExecutor` in the background. Everything else comes from `config/bridge.json`; the MQTT password is read from the file the
+(`--ros-args --params-file docs/deploy/bridge_params.yaml`; the value in the file of the configuration is the default), builds the bridge with `node_is_spinning=True`, and
+`run_forever()` spins the node on a `SingleThreadedExecutor` in the background. Everything else comes from `docs/deploy/bridge.json`; the MQTT password is read from the file the
 configuration names, never from the command line. `--check` validates the configuration and exits without opening anything. Not run against a real ROS 2 graph or broker.
 """
 
@@ -34,7 +34,7 @@ from .rclpy_transport import create_ros2_node
 
 _LOG = logging.getLogger(__name__)
 CONFIG_ENVIRONMENT = "HYDRA_UMC_ROS2_CONFIG"
-DEFAULT_CONFIG_PATH = "config/bridge.json"
+DEFAULT_CONFIG_PATH = "docs/deploy/bridge.json"
 
 
 class ConfigError(ValueError):
