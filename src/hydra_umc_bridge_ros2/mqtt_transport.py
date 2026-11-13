@@ -66,6 +66,7 @@ from hydra_umc_sdk.bridge_transport import MqttPublish, connect_with_retry, open
 
 from hydra_umc_sdk.global_stop import GlobalStopGuard, GlobalStopSettings, follow_on_connect
 from .coordinator import Ros2Coordinator, Ros2Dispatch
+from .extensions import BridgeExtension, ExtensionHost
 from .rclpy_transport import Ros2Node, Ros2SafeStopClient, Ros2StateSubscriber, SubscribeResult, spin_node_in_background
 
 _LOG = logging.getLogger(__name__)
@@ -114,6 +115,13 @@ def _dispatch_result(dispatch: Ros2Dispatch) -> str:
 def _refusal(suffix: str, reason: str) -> list["MqttPublish"]:
     result = {"allowed": False, "accepted": False, "interface": "none", "reason": reason, "mode": "plan-only"}
     return [MqttPublish(f"{TOPIC_PREFIX}{suffix}/result", json.dumps(result))]
+
+
+def _extension_refusal(suffix: str | None, reason: str) -> list["MqttPublish"]:
+    """The answer of a refused message of an extension; a message that is not a command (a feed, a replay) has nothing to answer."""
+    if suffix is None:
+        return []
+    return [MqttPublish(f"{TOPIC_PREFIX}{suffix}/result", json.dumps({"allowed": False, "reason": reason}))]
 
 
 def state_payload(state: str, observed_at_ms: int) -> str:
@@ -172,6 +180,8 @@ class Ros2MqttBridge:
         # was never heard (or is not a known state) counts as OFFLINE, so nothing productive is forwarded on a claim.
         self._observing = False
         self._observed: MachineState | None = None
+        # the optional extensions (extensions.py): none unless the configuration names them
+        self.extensions = ExtensionHost()
 
     def start_observing(self) -> None:
         self._observing = True
@@ -207,6 +217,9 @@ class Ros2MqttBridge:
         the message (a deeply nested JSON, an rclpy error) come back as a
         refusal on the verb's result topic."""
 
+        extension = self.extensions.claiming(topic)
+        if extension is not None:
+            return self._handle_extension(extension, topic, payload, retained)
         if retained or not topic.startswith(TOPIC_PREFIX):
             return []
         suffix = topic[len(TOPIC_PREFIX) :]
@@ -225,6 +238,23 @@ class Ros2MqttBridge:
         except Exception as error:  # noqa: BLE001 - nothing a message does may end the loop
             _LOG.exception("could not handle %s", topic)
             return _refusal(suffix, f"the command could not be handled: {type(error).__name__}")
+
+    def _handle_extension(self, extension: BridgeExtension, topic: str, payload: bytes, retained: bool) -> list[MqttPublish]:
+        """A message of a topic that an extension claims. Under the prefix of the bridge a command is refused while the global stop of the server is active when the extension
+        names its verb as moving (or as a job, which an abort still passes); every refusal and every failure is an answer on the result topic, never an exception."""
+        suffix = topic[len(TOPIC_PREFIX) :] if topic.startswith(TOPIC_PREFIX) else None
+        answer_to = suffix if suffix is not None and not retained else None
+        if len(payload) > MAX_PAYLOAD_BYTES:
+            return _extension_refusal(answer_to, f"payload is larger than {MAX_PAYLOAD_BYTES} bytes")
+        if answer_to is not None:
+            refused = self.global_stop.refusal(answer_to, payload, moving=self.extensions.moving_verbs(), jobs=self.extensions.job_verbs())
+            if refused is not None:
+                return _extension_refusal(answer_to, refused)
+        try:
+            return extension.on_message(topic, payload, retained)
+        except Exception as error:  # noqa: BLE001 - nothing a message does may end the loop
+            _LOG.exception("could not handle %s", topic)
+            return _extension_refusal(answer_to, f"the command could not be handled: {type(error).__name__}")
 
     def _handle_job(self, payload: bytes) -> MqttPublish:
         result_topic = f"{TOPIC_PREFIX}cmd/job/result"
@@ -300,14 +330,47 @@ class MessageDispatcher(SharedMessageDispatcher):
         super().__init__(bridge, TOPIC_PREFIX, stop_verbs, **limits)  # type: ignore[arg-type]
         guard = getattr(bridge, "global_stop", None)
         self._global_stop = guard if isinstance(guard, GlobalStopGuard) else None
+        host = getattr(bridge, "extensions", None)
+        self._extensions = host if isinstance(host, ExtensionHost) else None
+        self._bridge_handler = bridge
 
     def on_message(self, client: object, userdata: object, message: object) -> None:
         # the announcement of the global stop is retained: it is the state, not a replay, so it is read before the retained check of the shared dispatcher
         guard = self._global_stop
-        if guard is not None and guard.enabled and getattr(message, "topic", None) == guard.topic:
+        topic = getattr(message, "topic", None)
+        claimed = self._extensions.claiming(topic) if self._extensions is not None and isinstance(topic, str) else None
+        if guard is not None and guard.enabled and topic == guard.topic:
             guard.observe(bytes(message.payload))  # type: ignore[attr-defined]
+            if claimed is None:
+                return
+        if claimed is not None and isinstance(topic, str) and claimed.inline(topic):
+            self._run_inline(client, topic, message)
             return
         super().on_message(client, userdata, message)
+
+    def _run_inline(self, client: object, topic: str, message: object) -> None:
+        """A message that an extension asked to have handled on the network thread (cheap, never blocking); retained ones included."""
+        try:
+            for publish in self._bridge_handler.handle_message(topic, bytes(message.payload), retained=bool(getattr(message, "retain", False))):  # type: ignore[attr-defined]
+                client.publish(publish.topic, publish.payload, qos=getattr(publish, "qos", 0), retain=publish.retain)  # type: ignore[attr-defined]
+        except Exception:  # noqa: BLE001 - one bad message never ends the loop
+            _LOG.exception("could not handle %s", topic)
+
+
+def _on_connected(guard: object, extensions: ExtensionHost | None) -> Callable[[object], None] | None:
+    """What runs after every accepted (re)connect: follow the global stop and subscribe to the extra filters of the extensions; None when there is nothing to do."""
+    follow = follow_on_connect(guard) if isinstance(guard, GlobalStopGuard) else None
+    extra = extensions.subscriptions() if extensions is not None else []
+    if follow is None and not extra:
+        return None
+
+    def on_connected(client: object) -> None:
+        if follow is not None:
+            follow(client)
+        for topic_filter, qos in extra:
+            client.subscribe(topic_filter, qos=qos)  # type: ignore[attr-defined]
+
+    return on_connected
 
 
 def run_forever(
@@ -354,6 +417,8 @@ def run_forever(
     dispatcher = MessageDispatcher(bridge, **hardening.dispatcher_kwargs())  # type: ignore[arg-type]  # the keywords are ints; the stop verbs stay the default
     guard = getattr(bridge, "global_stop", None)  # a bridge object that is not one of ours has none: nothing to follow
     spinner = None
+    found = getattr(bridge, "extensions", None)
+    extensions = found if isinstance(found, ExtensionHost) else None
     try:
         client = open_bridge_client(
             host,
@@ -366,7 +431,7 @@ def run_forever(
             mqtt_module=mqtt_module,
             max_connect_attempts=max_connect_attempts,
             connect_retry_delay_seconds=connect_retry_delay_seconds,
-            on_connected=follow_on_connect(guard) if isinstance(guard, GlobalStopGuard) else None,
+            on_connected=_on_connected(guard, extensions),
             **hardening.connect_kwargs(),
         )
         spinner = spin_node_in_background(bridge.node)
@@ -374,8 +439,12 @@ def run_forever(
         subscribed = bridge_state_to_mqtt(bridge.node, lambda topic, payload, retain: client.publish(topic, payload, retain=retain), bridge.observe)  # type: ignore[attr-defined]
         if not subscribed.subscribed:
             raise RuntimeError(f"the ROS 2 state topic cannot be observed: {subscribed.reason}")
+        if extensions is not None:
+            extensions.start(bridge.node, lambda topic, payload, retain: client.publish(topic, payload, retain=retain))  # type: ignore[attr-defined]
         client.loop_forever()  # type: ignore[attr-defined]
     finally:
+        if extensions is not None:
+            extensions.stop()
         if spinner is not None:
             spinner.stop()
         dispatcher.close(wait=False)

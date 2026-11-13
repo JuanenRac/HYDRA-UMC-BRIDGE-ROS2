@@ -20,6 +20,9 @@ workflow named "Simulation bench" does exactly this on a clean Linux runner on e
 |------|-------------------|
 | `tests/test_rclpy_transport.py` | the transport refuses cleanly and says why when `rclpy` is missing; nothing is faked at the message level |
 | `tests/test_service_and_safety.py` | the service configuration and its ROS parameters, the 2 s expiry of the machine state, an `ABORT` job that calls the safe-stop service, the shared job intake, and the launch file, parameter file and systemd unit |
+| `tests/test_extensions.py` | the hook for optional extensions: the section parser, routing of claimed topics, the global stop on a moving verb, start and stop in `run_forever()` |
+| `tests/test_ext_diagnostics.py` | the diagnostics feed: summary, limits, silence, cleaning of texts, a seeded random stream, and that it claims no command topic |
+| `tests/ros2/test_ext_diagnostics_ros2.py` | against a real rclpy in the container: a seeded stream of real `DiagnosticArray` messages, injected faults, silence, and that the node gains no publisher, service or client |
 | `tests/ros2/test_real_ros2.py` | against a real rclpy in the ROS 2 container of the workflow "ROS 2 bench" (skipped elsewhere): the generated interface types, the state topic and its expiry, the safe-stop service, the entry point |
 | `tests/test_coordinator.py` | the coordinator and its gate |
 | `tests/test_mqtt_transport.py` | the topic dispatch, QoS, idempotency and limits without a broker |

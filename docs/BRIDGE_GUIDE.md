@@ -112,3 +112,7 @@ While the last announcement says `SAFE_STOP`, says anything but `READY`, or cann
 ## Hardware acceptance gate
 
 Before deploying an adapter: select the ROS 2 distribution and middleware, document namespaces/types/QoS, bind authenticated robot identity, verify stale/disconnected-state behavior, test abort independently, and perform bench/HIL validation. The native ROS controller remains responsible for motion safety.
+
+## Optional extensions
+
+Feeds and commands that connect the bridge to more of ROS 2 are optional modules, all off by default and switched on in the `extensions` object of the configuration: see `EXTENSIONS.md`.

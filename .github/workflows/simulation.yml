@@ -54,6 +54,8 @@ jobs:
           test_broker_integration
           test_global_stop_broker
           test_service_main_faults
+          test_extensions
+          test_ext_diagnostics
       - name: Verify the interface plan fixture
         env:
           PYTHONPATH: "${{ github.workspace }}/src:${{ github.workspace }}/.hydra-umc-sdk-contract/clients/python/src"
