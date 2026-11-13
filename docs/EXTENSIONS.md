@@ -23,6 +23,7 @@ value of the wrong type or names an extension that does not exist stops the star
 | Cell status | `cell_status` | HYDRA-UMC to ROS 2 | read only | `CELL_STATUS_FEED.md` |
 | Diagnostics | `diagnostics` | ROS 2 to HYDRA-UMC | read only | `DIAGNOSTICS_FEED.md` |
 | Motion | `motion` | HYDRA-UMC to ROS 2 | **can move a robot**: global stop, signed command, gate, named goals only | `MOTION_ADAPTERS.md` |
+| Fleet | `fleet` | HYDRA-UMC to ROS 2 and AMR | **can move a vehicle**: global stop, signed command, gate, named vehicles and stations only | `FLEET_ENTRY.md` |
 
 ## What the hook gives an extension
 
