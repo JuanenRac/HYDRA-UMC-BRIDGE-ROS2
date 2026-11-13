@@ -194,7 +194,7 @@ run_forever(bridge, host="192.168.0.180")
 | `test_transport_limits.py` | - | MQTT トランスポートの上限（最も古い待機コマンドを破棄する上限付きキュー、停止動詞には適用されないペイロード上限、初回接続での揺らぎ付き指数バックオフ）と、コピーの代わりに共有 SDK から取り込んだグローバル停止の番人。設定で有効にしない限り上限は無効です |
 | `test_broker_integration.py`, `broker_harness.py` | - | 空いているローカルポート上の実際の HYDRA-UMC-MQTT-BROKER に対する MQTT クライアントの試験：クライアント経由の指示、保持された状態と遺言、ブローカーが落ちて戻った後の復帰。Node.js、`paho-mqtt`、またはインストール済みのブローカー（`HYDRA_UMC_TEST_BROKER_DIR`、既定は隣のフォルダー）がなければ自動的にスキップされます |
 | `test_coordinator.py`, `test_intake.py` | - | ジョブからインターフェースへの変換とジョブの受付 |
-| `test_mtls.py` | - | クライアント証明書：設定、鍵のモードと場所、それを要求するローカル TLS サーバーとの実際のハンドシェイク |
+| `test_mtls.py` | - | クライアント証明書（任意、既定では無効）：設定、鍵のモードと場所、それを要求するローカル TLS サーバーとの実際のハンドシェイク |
 | `test_interface_contract.py` | - | .msg・.srv・.action ファイル：組み込み型のみ、動作を運びうるものなし、フェーズと状態の定数は SDK と同一 |
 | `test_rclpy_transport.py` | - | rclpy の代替物に対する 2 つの rclpy インターフェース |
 | `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_edge_cases.py` | - | トピックの振り分け、環境の認証情報、悪意あるクライアント、境界ケース |

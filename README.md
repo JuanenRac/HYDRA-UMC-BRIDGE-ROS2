@@ -194,7 +194,7 @@ The user name, the password and the TLS files come from the `HYDRA_MQTT_*` varia
 | `test_transport_limits.py` | - | the limits of the MQTT transport (a bounded queue that drops the oldest waiting command, a payload cap that never applies to the stop verbs, backoff with jitter on the first connection) and the guard of the global stop taken from the shared SDK instead of a copy; the limits are off unless the settings switch them on |
 | `test_broker_integration.py`, `broker_harness.py` | - | the MQTT client against a real HYDRA-UMC-MQTT-BROKER on a free local port: an order through the client, the retained state and last will, and the way back after the broker went down and up; it skips itself when Node.js, `paho-mqtt` or the installed broker (`HYDRA_UMC_TEST_BROKER_DIR`, by default the folder next to this one) are missing |
 | `test_coordinator.py`, `test_intake.py` | - | job to interface mapping and the intake of jobs |
-| `test_mtls.py` | - | client certificate: settings, key mode and location, and a real handshake against a local TLS server that demands it |
+| `test_mtls.py` | - | optional client certificate (off by default): settings, key mode and location, and a real handshake against a local TLS server that demands it |
 | `test_interface_contract.py` | - | the .msg, .srv and .action files: built-in types only, nothing that could carry a motion, and the phase and state constants equal to the SDK |
 | `test_rclpy_transport.py` | - | the two rclpy interfaces against a stand-in for rclpy |
 | `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_edge_cases.py` | - | topic dispatch, the credentials of the environment, hostile clients, edge cases |

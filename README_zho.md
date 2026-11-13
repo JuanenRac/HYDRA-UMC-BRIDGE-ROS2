@@ -194,7 +194,7 @@ run_forever(bridge, host="192.168.0.180")
 | `test_transport_limits.py` | - | MQTT 传输的限制（丢弃最旧等待指令的有界队列、从不作用于停止动词的负载上限、首次连接时带抖动的指数退避），以及取自共享 SDK 而非副本的全局停止守卫；除非设置开启，否则这些限制处于关闭状态 |
 | `test_broker_integration.py`, `broker_harness.py` | - | 在空闲本地端口上对真实 HYDRA-UMC-MQTT-BROKER 的 MQTT 客户端测试：通过客户端下发的指令、保留状态与遗嘱，以及代理掉线再恢复后的回路；缺少 Node.js、`paho-mqtt` 或已安装的代理（`HYDRA_UMC_TEST_BROKER_DIR`，默认是相邻文件夹）时会自动跳过 |
 | `test_coordinator.py`, `test_intake.py` | - | 任务到接口的映射与任务接收 |
-| `test_mtls.py` | - | 客户端证书：设置、密钥的模式与位置，以及与要求证书的本地 TLS 服务器的真实握手 |
+| `test_mtls.py` | - | 客户端证书（可选，默认关闭）：设置、密钥的模式与位置，以及与要求证书的本地 TLS 服务器的真实握手 |
 | `test_interface_contract.py` | - | .msg、.srv 和 .action 文件：仅内置类型，没有可能携带运动的字段，阶段和状态常量与 SDK 相同 |
 | `test_rclpy_transport.py` | - | 两个 rclpy 接口对 rclpy 替身 |
 | `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_edge_cases.py` | - | 主题分发、环境凭据、恶意客户端、边界情况 |
