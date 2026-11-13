@@ -1,0 +1,17 @@
+{
+  "mqtt": {
+    "host": "127.0.0.1",
+    "port": 1883,
+    "client_id": "hydra-umc-bridge-ros2",
+    "username": "",
+    "password_file": "",
+    "max_connect_attempts": 5,
+    "connect_retry_delay_seconds": 2.0
+  },
+  "node": {
+    "name": "hydra_umc_bridge_ros2",
+    "observed_max_age_s": 2.0,
+    "abort_calls_safe_stop": true,
+    "idempotency_file": ""
+  }
+}

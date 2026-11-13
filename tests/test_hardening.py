@@ -82,13 +82,19 @@ class JobAnswerShapeTests(unittest.TestCase):
         self.assertFalse(refused["allowed"])
         self.assertFalse(refused["accepted"])
 
-    def test_an_abort_answer_says_nothing_was_sent_and_names_the_real_stop_command(self):
-        answer = result(bridge().handle_message(f"{TOPIC_PREFIX}cmd/job", message(JobPhase.ABORT)))
+    def test_an_abort_answer_that_only_plans_says_nothing_was_sent_and_names_the_real_stop_command(self):
+        answer = result(bridge(abort_calls_safe_stop=False).handle_message(f"{TOPIC_PREFIX}cmd/job", message(JobPhase.ABORT)))
         self.assertTrue(answer["allowed"])
         self.assertEqual(answer["mode"], "plan-only")
         self.assertIn("sent nothing", answer["reason"])
         self.assertIn("cmd/safe_stop", answer["reason"])
         self.assertNotIn("forwarded to the authorised safety path", answer["reason"])
+
+    def test_an_abort_answer_that_cannot_reach_the_stop_service_says_so(self):
+        answer = result(bridge().handle_message(f"{TOPIC_PREFIX}cmd/job", message(JobPhase.ABORT)))
+        self.assertTrue(answer["allowed"])
+        self.assertFalse(answer["executed"])
+        self.assertIn("did not confirm", answer["reason"])
 
 
 class StaleStateTests(unittest.TestCase):
@@ -107,7 +113,7 @@ class StaleStateTests(unittest.TestCase):
 
     def test_without_a_limit_the_last_state_is_kept(self):
         now = [100.0]
-        b = bridge(clock=lambda: now[0])
+        b = bridge(clock=lambda: now[0], observed_max_age_seconds=None)
         b.start_observing()
         b.observe("IDLE")
         now[0] += 10_000

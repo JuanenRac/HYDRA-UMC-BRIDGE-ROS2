@@ -31,6 +31,9 @@ dependencies = [
 # test, works without it installed.
 mqtt = ["paho-mqtt>=2.1,<3"]
 
+[project.scripts]
+hydra-umc-bridge-ros2 = "hydra_umc_bridge_ros2.service:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

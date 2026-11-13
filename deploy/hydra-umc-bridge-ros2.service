@@ -1,0 +1,27 @@
+# HYDRA-UMC-BRIDGE-ROS2 - systemd unit (GPL-3.0-or-later - see LICENSE)
+# Install: copy to /etc/systemd/system/, the repository to /opt/hydra-umc/bridge-ros2, the configuration to /etc/hydra-umc/bridge-ros2.json,
+# the ROS 2 environment line to /etc/hydra-umc/bridge-ros2.env (AMENT_PREFIX_PATH, LD_LIBRARY_PATH, PYTHONPATH of the distribution, ROS_DOMAIN_ID; with SROS2 also
+# ROS_SECURITY_KEYSTORE, ROS_SECURITY_ENABLE=true and ROS_SECURITY_STRATEGY=Enforce) and the MQTT secrets as files only the service can read.
+[Unit]
+Description=HYDRA-UMC bridge to ROS 2
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hydra-umc
+EnvironmentFile=-/etc/hydra-umc/bridge-ros2.env
+Environment=HYDRA_UMC_ROS2_CONFIG=/etc/hydra-umc/bridge-ros2.json
+WorkingDirectory=/opt/hydra-umc/bridge-ros2
+ExecStart=/usr/bin/python3 -m hydra_umc_bridge_ros2 --ros-args --params-file /etc/hydra-umc/bridge-ros2-params.yaml
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

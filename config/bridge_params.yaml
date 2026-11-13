@@ -1,0 +1,11 @@
+# HYDRA-UMC-BRIDGE-ROS2 - ROS 2 parameters of the bridge node (GPL-3.0-or-later - see LICENSE)
+# They override the defaults of config/bridge.json when the node is started with
+#   --ros-args --params-file config/bridge_params.yaml
+# or through launch/hydra_umc_bridge_ros2.launch.py.
+hydra_umc_bridge_ros2:
+  ros__parameters:
+    # Seconds the last machine state counts for. The publisher of /hydra_umc/machine_state must repeat the state at least this often
+    # (a heartbeat), or the bridge refuses every productive job as OFFLINE. 0 switches the limit off (only for a publisher known to republish on a timer).
+    observed_max_age_s: 2.0
+    # An ABORT job calls the real safe stop service (/hydra_umc/request_safe_stop).
+    abort_calls_safe_stop: true
