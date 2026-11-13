@@ -151,7 +151,8 @@ class RealCellStatusTests(unittest.TestCase):
         clients = [topic for topic, _ in self.node.get_client_names_and_types_by_node(name, space)]
         self.assertEqual(clients, [])
         services = [topic for topic, _ in self.node.get_service_names_and_types_by_node(name, space)]
-        self.assertTrue(all("parameter" in topic for topic in services), services)
+        # only the services every node has (parameters, type description), none of ours
+        self.assertTrue(all(topic.startswith(f"/{name}/") and "hydra_umc" not in topic for topic in services), services)
         published = {topic for topic, _ in self.node.get_publisher_names_and_types_by_node(name, space)}
         self.assertIn("/hydra_umc/cells/robot_1/status", published)
         self.assertEqual({topic for topic in published if topic.startswith("/hydra_umc")}, {"/hydra_umc/cells/robot_1/status"})
