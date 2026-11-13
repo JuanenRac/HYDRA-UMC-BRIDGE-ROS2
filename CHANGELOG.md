@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Tests of the start-up faults of the service:** a damaged configuration, a missing or empty secret file, ROS 2 not installed and a transport loop that raises or ends, with the exit codes systemd relies on and the secret never printed (`tests/test_service_main_faults.py`, part of the simulation bench). CI now measures coverage with a floor.
 - **The last machine state expires after 2 seconds by default:** `observed_max_age_seconds` used to be off, so a publisher that died after saying `IDLE` was believed for ever. The limit is now on (`node.observed_max_age_s` in `docs/deploy/bridge.json`, the ROS parameter of the same name, `HYDRA_UMC_ROS2_OBSERVED_MAX_AGE_S`; 0 switches it off); the publisher of `/hydra_umc/machine_state` has to repeat the state as a heartbeat, or every productive job is refused as `OFFLINE`, which fails on the safe side. The guide says that stopping other nodes of the ROS domain from publishing on that topic needs SROS2 in the real deployment.
 - **An `ABORT` job calls the real safe-stop service:** it used to name the service and send nothing. Now it calls it (`node.abort_calls_safe_stop`, true by default), the answer says whether the service confirmed (`executed`, `safe_stop`, `mode: send`), a repeated `ABORT` is run again, and with the switch off it only names the service as before.
 - **Jobs go through the shared `JobIntake` of the SDK,** like the other bridges (malformed and repeated jobs are recognised in one place); the answers keep their shape.
