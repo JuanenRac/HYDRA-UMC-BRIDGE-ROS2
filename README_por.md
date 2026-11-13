@@ -194,7 +194,7 @@ O nome de utilizador, a palavra-passe e os ficheiros TLS vêm das variáveis `HY
 | `test_transport_limits.py` | - | os limites do transporte MQTT (uma fila limitada que descarta a ordem em espera mais antiga, um limite de carga que nunca se aplica aos verbos de paragem, espera exponencial com variação aleatória na primeira ligação) e a guarda da paragem global tirada do SDK partilhado em vez de uma cópia; os limites estão desligados enquanto as definições não os ligarem |
 | `test_broker_integration.py`, `broker_harness.py` | - | o cliente MQTT contra um HYDRA-UMC-MQTT-BROKER real numa porta local livre: uma ordem através do cliente, o estado retido e a última vontade, e o regresso depois de o broker cair e voltar; é ignorado quando faltam o Node.js, o `paho-mqtt` ou o broker instalado (`HYDRA_UMC_TEST_BROKER_DIR`, por omissão a pasta ao lado) |
 | `test_coordinator.py`, `test_intake.py` | - | mapeamento de trabalho para interface e a admissão de trabalhos |
-| `test_mtls.py` | - | certificado de cliente: definições, modo e localização da chave e um handshake real contra um servidor TLS local que o exige |
+| `test_mtls.py` | - | certificado de cliente opcional (desativado por predefinição): definições, modo e localização da chave e um handshake real contra um servidor TLS local que o exige |
 | `test_interface_contract.py` | - | os ficheiros .msg, .srv e .action: só tipos básicos, nada que possa transportar um movimento e constantes de fase e estado iguais às do SDK |
 | `test_rclpy_transport.py` | - | as duas interfaces rclpy contra um dublê do rclpy |
 | `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_edge_cases.py` | - | distribuição de tópicos, credenciais do ambiente, clientes hostis, casos limite |
