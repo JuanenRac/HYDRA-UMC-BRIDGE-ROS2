@@ -19,6 +19,8 @@ workflow named "Simulation bench" does exactly this on a clean Linux runner on e
 | File | What it exercises |
 |------|-------------------|
 | `tests/test_rclpy_transport.py` | the transport refuses cleanly and says why when `rclpy` is missing; nothing is faked at the message level |
+| `tests/test_service_and_safety.py` | the service configuration and its ROS parameters, the 2 s expiry of the machine state, an `ABORT` job that calls the safe-stop service, the shared job intake, and the launch file, parameter file and systemd unit |
+| `tests/ros2/test_real_ros2.py` | against a real rclpy in the ROS 2 container of the workflow "ROS 2 bench" (skipped elsewhere): the generated interface types, the state topic and its expiry, the safe-stop service, the entry point |
 | `tests/test_coordinator.py` | the coordinator and its gate |
 | `tests/test_mqtt_transport.py` | the topic dispatch, QoS, idempotency and limits without a broker |
 | `tests/test_broker_integration.py` | the same dispatch against a real MQTT broker; skipped unless the broker checkout is present |

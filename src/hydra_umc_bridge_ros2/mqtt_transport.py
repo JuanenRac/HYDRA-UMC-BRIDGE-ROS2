@@ -49,12 +49,14 @@ from __future__ import annotations
 
 import json
 import logging
+import math
+import os
 import time
 from dataclasses import asdict
 from typing import Any, Callable
 
-from hydra_umc_sdk.bridge_contract import BridgeError, CellState, MachineState, job_from_dict
-from hydra_umc_sdk.job_intake import IdempotencyStore
+from hydra_umc_sdk.bridge_contract import CellState, JobPhase, MachineState
+from hydra_umc_sdk.job_intake import IdempotencyStore, JobIntake
 from hydra_umc_sdk.bridge_transport import BridgeHardening, hardening_from_environment
 
 from .mtls import MutualTlsSettings, mqtt_module_for
@@ -78,6 +80,28 @@ STOP_VERBS = frozenset({"cmd/safe_stop"})
 # Refused while the server announces a global stop (when the bridge follows it): a job asks for work (an abort is let through); the safe stop is never refused.
 MOVING_VERBS: frozenset[str] = frozenset()
 GLOBAL_STOP_ENVIRONMENT_NAME = "ROS2"
+
+# How old the last state of the machine may be before it stops counting. On by default: a publisher that died after saying IDLE must not be believed for ever, so the
+# publisher of the state topic has to repeat it (a heartbeat) at least this often. `None` (or 0 in the environment/configuration) keeps the state for ever, which is only
+# right for a publisher that is known to republish on a timer. A deployment on a real ROS 2 graph also needs SROS2 (DDS security permissions) so that no other node of the
+# same domain can publish on the state topic: that is a configuration of ROS 2, not something this bridge can check.
+DEFAULT_OBSERVED_MAX_AGE_SECONDS = 2.0
+OBSERVED_MAX_AGE_ENVIRONMENT = "HYDRA_UMC_ROS2_OBSERVED_MAX_AGE_S"
+
+
+def observed_max_age_from_environment(env: dict[str, str] | None = None) -> float | None:
+    """The age limit of the observed state from `HYDRA_UMC_ROS2_OBSERVED_MAX_AGE_S`: unset gives the default, `0` switches the limit off (None), anything else must be a positive number."""
+    source = os.environ if env is None else env
+    raw = (source.get(OBSERVED_MAX_AGE_ENVIRONMENT) or "").strip()
+    if not raw:
+        return DEFAULT_OBSERVED_MAX_AGE_SECONDS
+    try:
+        value = float(raw)
+    except ValueError:
+        raise ValueError(f"{OBSERVED_MAX_AGE_ENVIRONMENT} must be a number of seconds, 0 to switch the limit off") from None
+    if not math.isfinite(value) or value < 0:
+        raise ValueError(f"{OBSERVED_MAX_AGE_ENVIRONMENT} must be a finite number of seconds, 0 or more")
+    return None if value == 0 else value
 
 
 def _dispatch_result(dispatch: Ros2Dispatch) -> str:
@@ -116,22 +140,27 @@ class Ros2MqttBridge:
         idempotency: IdempotencyStore | None = None,
         *,
         node_is_spinning: bool = False,
-        observed_max_age_seconds: float | None = None,
+        observed_max_age_seconds: float | None = DEFAULT_OBSERVED_MAX_AGE_SECONDS,
         clock: Callable[[], float] = time.monotonic,
         global_stop: GlobalStopGuard | GlobalStopSettings | None = None,
+        abort_calls_safe_stop: bool = True,
+        safe_stop_client: Ros2SafeStopClient | None = None,
     ) -> None:
         self.node = node
         self._cell_state = cell_state
         self._coordinator = Ros2Coordinator()
-        self._safe_stop = Ros2SafeStopClient(node_is_spinning=node_is_spinning)
-        # How old the last reported state may be before it stops counting. None keeps it for ever, which is only right
-        # for a publisher that republishes on a timer: a publisher that died after saying IDLE would otherwise
-        # be believed IDLE for ever. Set it to a few of that publisher's periods.
+        self._safe_stop = safe_stop_client if safe_stop_client is not None else Ros2SafeStopClient(node_is_spinning=node_is_spinning)
+        # an ABORT job calls the real safe stop service (stopping is the safe direction); False makes it only name the service, and the stop is then `cmd/safe_stop`
+        self.abort_calls_safe_stop = bool(abort_calls_safe_stop)
+        # How old the last reported state may be before it stops counting (2 s unless told otherwise, see DEFAULT_OBSERVED_MAX_AGE_SECONDS). None keeps it for ever, which is
+        # only right for a publisher that republishes on a timer: a publisher that died after saying IDLE would otherwise be believed IDLE for ever.
         self._observed_max_age = observed_max_age_seconds
         self._clock = clock
         self._observed_at = 0.0
         # docs/BRIDGE_CONTRACT.md: the idempotency key of a job is handled once; a repeat gets the answer that was given
         self._idempotency = idempotency
+        # the shared first look at a job: malformed ones are refused and a repeated idempotency key is recognised (the same intake as the other bridges)
+        self._intake = JobIntake(idempotency)
         # follows the global stop that the server announces (global_stop.py); off unless HYDRA_UMC_ROS2_GLOBAL_STOP=1 or a guard is given
         if isinstance(global_stop, GlobalStopGuard):
             self.global_stop = global_stop
@@ -200,18 +229,36 @@ class Ros2MqttBridge:
     def _handle_job(self, payload: bytes) -> MqttPublish:
         result_topic = f"{TOPIC_PREFIX}cmd/job/result"
         try:
-            job = job_from_dict(json.loads(payload))
-        except (json.JSONDecodeError, BridgeError, UnicodeDecodeError) as error:
+            raw = json.loads(payload)
+        except (ValueError, UnicodeDecodeError) as error:
             dispatch: Any = {"allowed": False, "accepted": False, "interface": "none", "reason": f"malformed job payload: {error}", "mode": "plan-only"}
             return MqttPublish(result_topic, json.dumps(dispatch))
-        if self._idempotency is not None and not self._idempotency.claim(job.idempotency_key):
-            stored = self._idempotency.recall(job.idempotency_key)
-            if stored is None:
-                stored = json.dumps({"allowed": False, "accepted": False, "interface": "none", "reason": "this idempotency_key was already handled", "mode": "plan-only"})
-            return MqttPublish(result_topic, stored)
-        dispatch = self._coordinator.dispatch(job, self._cell_state(), self._observed_state())
-        publish = MqttPublish(result_topic, _dispatch_result(dispatch))
-        if self._idempotency is not None:
+        intake = self._intake.accept(raw)
+        job = intake.job
+        if job is None:
+            dispatch = {"allowed": False, "accepted": False, "interface": "none", "reason": f"malformed job payload: {intake.reason}", "mode": "plan-only"}
+            return MqttPublish(result_topic, json.dumps(dispatch))
+        if not intake.accepted:
+            # an ABORT is repeated when its key was already handled: asking for a stop twice is harmless and a first attempt that died half way must not leave the machine running
+            if not (job.phase is JobPhase.ABORT and self.abort_calls_safe_stop):
+                stored = self._idempotency.recall(job.idempotency_key) if self._idempotency is not None else None
+                if stored is None:
+                    stored = json.dumps({"allowed": False, "accepted": False, "interface": "none", "reason": intake.reason, "mode": "plan-only"})
+                return MqttPublish(result_topic, stored)
+        dispatch_result = self._coordinator.dispatch(job, self._cell_state(), self._observed_state())
+        answer = json.loads(_dispatch_result(dispatch_result))
+        if dispatch_result.accepted and job.phase is JobPhase.ABORT and self.abort_calls_safe_stop:
+            stop = self._safe_stop.call(self.node, self._coordinator.safe_stop_service)
+            answer["safe_stop"] = asdict(stop)
+            answer["executed"] = bool(stop.called and stop.success)
+            if stop.called:
+                answer["mode"] = "send"
+            if stop.called and stop.success:
+                answer["reason"] = f"abort accepted and the safe stop service was called: {stop.reason}"
+            else:
+                answer["reason"] = f"abort accepted, but the safe stop service did not confirm: {stop.reason}"
+        publish = MqttPublish(result_topic, json.dumps(answer))
+        if self._idempotency is not None and intake.accepted:
             self._idempotency.remember(job.idempotency_key, publish.payload)
         return publish
 

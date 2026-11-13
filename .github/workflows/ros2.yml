@@ -1,0 +1,67 @@
+# =============================================================================
+# HYDRA-UMC-BRIDGE-ROS2 - ROS 2 bench (container)
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+#
+# Builds the interface package with colcon in a ROS 2 container and runs the tests that need a real rclpy: the generated types against the contract files, the state topic
+# and its expiry, the safe stop service, the entry point and its parameter file. A container with nodes of its own, never a robot or a real installation.
+# It runs on every push and pull request, by hand, and once a week.
+# =============================================================================
+name: ROS 2 bench
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 5 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  ros2:
+    name: colcon build and tests with rclpy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: ros:jazzy-ros-base
+    env:
+      ROS_DOMAIN_ID: "42"
+      ROS_AUTOMATIC_DISCOVERY_RANGE: LOCALHOST
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Install the build tools
+        run: >
+          apt-get update && apt-get install -y --no-install-recommends
+          git python3-colcon-common-extensions python3-paho-mqtt
+          ros-jazzy-rosidl-default-generators ros-jazzy-rosidl-default-runtime
+          ros-jazzy-std-msgs ros-jazzy-std-srvs ros-jazzy-launch ros-jazzy-launch-ros
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out the SDK contract
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: JuanenRac/HYDRA-UMC-SDK
+          path: .hydra-umc-sdk-contract
+          ref: v0.5.9
+          persist-credentials: false
+      - name: Build the interface package
+        working-directory: interfaces
+        run: |
+          . /opt/ros/jazzy/setup.sh
+          colcon build --base-paths . --event-handlers console_cohesion+
+      - name: Run the tests that need a real rclpy
+        run: |
+          . /opt/ros/jazzy/setup.sh
+          . interfaces/install/setup.sh
+          export PYTHONPATH="$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE/.hydra-umc-sdk-contract/clients/python/src:$GITHUB_WORKSPACE/tests:$PYTHONPATH"
+          python3 -m unittest discover -s tests/ros2 -p 'test_*.py' -t tests/ros2 -v
+      - name: Run the host tests again with a real rclpy installed
+        run: |
+          . /opt/ros/jazzy/setup.sh
+          . interfaces/install/setup.sh
+          export PYTHONPATH="$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE/.hydra-umc-sdk-contract/clients/python/src:$GITHUB_WORKSPACE/tests:$PYTHONPATH"
+          python3 -m unittest discover -s tests -p 'test_*.py' -t tests
