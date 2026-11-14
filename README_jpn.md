@@ -149,6 +149,7 @@ ROS 2 なしでインターフェース計画を確認するには：`python too
 
 | 変数 | 既定値 | 設定する内容 |
 |---|---|---|
+| `HYDRA_UMC_ROS2_IN_DOUBT_CONSULT` | オフ | `1` にすると、最初の試行が応答を残さなかった再送のジョブキーを拒否せず、マシン・車両・実行中の動作が報告する状態で応答します。何も再実行されません |
 | `HYDRA_UMC_ROS2_MTLS` | オフ | `1` でブリッジはサーバーにクライアント証明書を提示し（相互 TLS）、サーバー証明書を 1 つの CA だけで検証します（TLS 1.2 以上）。絶対パスの `HYDRA_UMC_ROS2_MTLS_CA`、`HYDRA_UMC_ROS2_MTLS_CERT`、`HYDRA_UMC_ROS2_MTLS_KEY` が必要です。他のユーザーが読める鍵（モード 0600 でないもの）や git 作業ツリー内の鍵は拒否され、SDK の `HYDRA_MQTT_TLS*` 設定とは併用できません |
 | `HYDRA_UMC_ROS2_GLOBAL_STOP` | オフ | `1` でサーバーのグローバル停止に従います。保持トピック `hydra/swarm/safety/estop` の最新の通知が `SAFE_STOP`（または読み取れない）の間、ブリッジは理由を付けて次を拒否します：ジョブ（中止は通す）。解除は `READY` のみです。`HYDRA_UMC_ROS2_GLOBAL_STOP_TOPIC` でトピックを変更でき、`HYDRA_UMC_ROS2_GLOBAL_STOP_STRICT=1` は最初の通知が届くまでも拒否します |
 | `HYDRA_MQTT_USERNAME` | なし | MQTT のユーザー名。ブローカーはクライアント ID のプレフィックスに結び付けます |

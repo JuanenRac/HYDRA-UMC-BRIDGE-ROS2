@@ -40,6 +40,7 @@ from hydra_umc_sdk.job_intake import IdempotencyStore, JobIntake, read_job_messa
 from hydra_umc_sdk.signed_commands import CommandSigningError, CommandVerifier, SignedCommandSettings
 
 from .extensions import BridgeExtension, ExtensionConfigError, Publish, section_from_dict
+from .in_doubt import in_doubt_policy, in_doubt_report
 
 _LOG = logging.getLogger(__name__)
 
@@ -212,6 +213,7 @@ class MotionGateway:
         goal_timeout_s: float,
         safe_stop: Callable[[], dict[str, Any]] | None = None,
         publish: Callable[[], Publish | None] = lambda: None,
+        heard_state: Callable[[], Any] | None = None,
         timer_factory: Callable[[float, Callable[[], None]], Any] = lambda delay, function: threading.Timer(delay, function),
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
@@ -219,6 +221,7 @@ class MotionGateway:
         self._store = store
         self._cell_state = cell_state
         self._observed_state = observed_state
+        self._heard_state = heard_state
         self._routes = routes
         self._timeout = goal_timeout_s
         self._safe_stop = safe_stop
@@ -253,6 +256,18 @@ class MotionGateway:
         if self._store is not None:
             self._store.remember(job.idempotency_key, json.dumps(body))
         return self._answer(verb, body)
+
+    def report_for_job_in_doubt(self, job: BridgeJob) -> str | None:
+        """What the machine and the running motion say now about a job whose first attempt left no answer (the `status_query` of the shared intake).
+
+        A reading, not a decision: no goal is sent and none is cancelled. With no state heard and no motion running there is nothing to report and the repeat is refused.
+        """
+
+        with self._lock:
+            active = self._active
+        running = active is not None and active.job_id == job.job_id
+        heard = self._heard_state() if self._heard_state is not None else None
+        return in_doubt_report(job, heard, reading=active is not None, goal_status="refused", forwarded=False, goal_running=running)
 
     def _refuse(self, job: BridgeJob, reason: str) -> dict[str, object]:
         return {"allowed": False, "reason": reason, "job_id": job.job_id, "goal_status": "refused"}
@@ -566,6 +581,10 @@ class MotionExtension(BridgeExtension):
             return [MqttPublish(f"{topic}/result", json.dumps({"allowed": False, "reason": "the motion extension has not started", "goal_status": "refused"}))] if not retained else []
         return gateway.handle(self._topics[topic], topic, payload, retained)
 
+    def _report_for_job_in_doubt(self, job: BridgeJob) -> str | None:
+        gateway = self.gateway
+        return gateway.report_for_job_in_doubt(job) if gateway is not None else None
+
     def _safe_stop(self) -> dict[str, Any]:
         bridge = self._bridge
         if not getattr(bridge, "abort_calls_safe_stop", False):
@@ -581,7 +600,7 @@ class MotionExtension(BridgeExtension):
         if store is None:
             store = self._own_store = IdempotencyStore()
         self.gateway = MotionGateway(
-            JobIntake(store, self._verifier),
+            JobIntake(store, self._verifier, in_doubt_policy=in_doubt_policy(bool(getattr(bridge, "in_doubt_consult", False))), status_query=self._report_for_job_in_doubt),
             store,
             bridge._cell_state,
             bridge._observed_state,
@@ -589,6 +608,7 @@ class MotionExtension(BridgeExtension):
             goal_timeout_s=self.settings.goal_timeout_s,
             safe_stop=self._safe_stop,
             publish=lambda: self._publish,
+            heard_state=getattr(bridge, "_heard_state", None),
         )
 
     def stop(self) -> None:
