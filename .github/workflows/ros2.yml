@@ -46,7 +46,7 @@ jobs:
         with:
           repository: JuanenRac/HYDRA-UMC-SDK
           path: .hydra-umc-sdk-contract
-          ref: v0.5.9
+          ref: v0.6.4
           persist-credentials: false
       - name: Build the interface package
         working-directory: interfaces
