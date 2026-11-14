@@ -8,6 +8,9 @@
     "max_connect_attempts": 5,
     "connect_retry_delay_seconds": 2.0
   },
+  "security": {
+    "require_sros2": false
+  },
   "node": {
     "name": "hydra_umc_bridge_ros2",
     "observed_max_age_s": 2.0,

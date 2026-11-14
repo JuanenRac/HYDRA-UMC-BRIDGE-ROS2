@@ -21,7 +21,7 @@ import math
 import os
 import re
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, fields, replace
 from pathlib import Path
 from typing import Callable
@@ -65,9 +65,16 @@ class NodeConfig:
 
 
 @dataclass(frozen=True)
+class SecurityConfig:
+    # off by default so that a deployment without a ROS 2 keystore keeps starting; on, the service refuses to start unless SROS2 is enabled, enforced and has a keystore
+    require_sros2: bool = False
+
+
+@dataclass(frozen=True)
 class ServiceConfig:
     mqtt: MqttConfig = field(default_factory=MqttConfig)
     node: NodeConfig = field(default_factory=NodeConfig)
+    security: SecurityConfig = field(default_factory=SecurityConfig)
     # the parsed settings of the optional extensions named in the file (extensions.py); none unless it names them
     extensions: dict[str, object] = field(default_factory=dict)
 
@@ -101,14 +108,19 @@ def load_service_config(path: str | Path | None) -> ServiceConfig:
         raise ConfigError(f"cannot read {path}: {error}") from error
     if not isinstance(raw, dict):
         raise ConfigError("the configuration must be a JSON object")
-    unknown = sorted(set(raw) - {"mqtt", "node", "extensions"})
+    unknown = sorted(set(raw) - {"mqtt", "node", "security", "extensions"})
     if unknown:
         raise ConfigError(f"unknown keys: {', '.join(unknown)}")
     try:
         extension_settings = parse_sections(raw.get("extensions"))
     except ExtensionConfigError as error:
         raise ConfigError(str(error)) from error
-    config = ServiceConfig(_section(raw.get("mqtt"), MqttConfig, "mqtt"), _section(raw.get("node"), NodeConfig, "node"), extension_settings)
+    config = ServiceConfig(
+        _section(raw.get("mqtt"), MqttConfig, "mqtt"),
+        _section(raw.get("node"), NodeConfig, "node"),
+        _section(raw.get("security"), SecurityConfig, "security"),
+        extension_settings,
+    )
     if not config.mqtt.host or not 0 < config.mqtt.port < 65536:
         raise ConfigError("'mqtt.host' and 'mqtt.port' must name a broker")
     if config.mqtt.max_connect_attempts < 1 or config.mqtt.connect_retry_delay_seconds < 0:
@@ -117,6 +129,33 @@ def load_service_config(path: str | Path | None) -> ServiceConfig:
     if problem:
         raise ConfigError(problem)
     return config
+
+
+def sros2_problems(env: Mapping[str, str]) -> list[str]:
+    """Why the ROS 2 security (SROS2) is not fully on in this environment, from the variables ROS 2 itself reads: ROS_SECURITY_ENABLE, ROS_SECURITY_STRATEGY and ROS_SECURITY_KEYSTORE.
+
+    Empty when security is enabled, enforced (a node that cannot authenticate does not start, instead of falling back to plain traffic) and the keystore directory holds the `enclaves`.
+    """
+    problems: list[str] = []
+    if env.get("ROS_SECURITY_ENABLE", "").strip().lower() != "true":
+        problems.append("ROS_SECURITY_ENABLE is not true")
+    if env.get("ROS_SECURITY_STRATEGY", "").strip().lower() != "enforce":
+        problems.append("ROS_SECURITY_STRATEGY is not Enforce")
+    keystore = env.get("ROS_SECURITY_KEYSTORE", "").strip()
+    if not keystore:
+        problems.append("ROS_SECURITY_KEYSTORE is not set")
+    elif not (Path(keystore) / "enclaves").is_dir():
+        problems.append("ROS_SECURITY_KEYSTORE has no 'enclaves' directory")
+    return problems
+
+
+def check_security(security: SecurityConfig, env: Mapping[str, str]) -> None:
+    """With `security.require_sros2` the service does not start unless SROS2 is on; without it nothing is checked (the traffic of the node is then as plain as before)."""
+    if not security.require_sros2:
+        return
+    problems = sros2_problems(env)
+    if problems:
+        raise ConfigError("'security.require_sros2' is on and SROS2 is not: " + "; ".join(problems))
 
 
 def _node_problem(node: NodeConfig) -> str | None:
@@ -192,6 +231,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     try:
         config = load_service_config(args.config)
+        check_security(config.security, os.environ)
         password = _read_secret(config.mqtt.password_file, "MQTT password") if config.mqtt.password_file else None
         if args.check:
             print(f"CONFIG=PASS {args.config}")
@@ -222,4 +262,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     return 1
 
 
-__all__ = ["ConfigError", "MqttConfig", "NodeConfig", "ServiceConfig", "apply_ros_parameters", "build_bridge", "load_service_config", "main"]
+__all__ = [
+    "ConfigError",
+    "MqttConfig",
+    "NodeConfig",
+    "SecurityConfig",
+    "ServiceConfig",
+    "apply_ros_parameters",
+    "build_bridge",
+    "check_security",
+    "load_service_config",
+    "main",
+    "sros2_problems",
+]
