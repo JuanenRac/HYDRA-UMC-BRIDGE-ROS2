@@ -36,6 +36,7 @@ from hydra_umc_sdk.job_intake import IdempotencyStore, JobIntake, read_job_messa
 from hydra_umc_sdk.signed_commands import CommandSigningError, CommandVerifier, SignedCommandSettings, load_key, sign_command
 
 from .extensions import BridgeExtension, ExtensionConfigError, Publish, section_from_dict
+from .in_doubt import in_doubt_policy, in_doubt_report
 
 _LOG = logging.getLogger(__name__)
 
@@ -207,6 +208,27 @@ class FleetGateway:
         relay = {"vehicle": owner, "job_id": job_id, "kind": "vda5050", "allowed": bool(body.get("allowed")), "reason": str(body.get("reason", ""))[:300], "amr_answer": True}
         return [MqttPublish(RESULT_TOPIC, json.dumps(relay))]
 
+    def report_for_job_in_doubt(self, job: BridgeJob) -> str | None:
+        """What the vehicle named by a job says now, for a repeat whose first attempt left no answer (the `status_query` of the shared intake).
+
+        A reading, not a decision: nothing is forwarded. A vehicle that is not in the list, an AMR never heard or heard longer ago than the limit, or a machine whose state was never heard (or is too old) give no answer.
+        """
+
+        name = job.parameters.get("vehicle", "")
+        vehicle = self._fleet.get(name)
+        if vehicle is None:
+            return None
+        state: MachineState | None
+        if vehicle.kind == "vda5050":
+            with self._lock:
+                seen = self._amr_state.get(vehicle.topic_prefix)
+            if seen is None or self._clock() - seen[1] > self._settings.amr_state_max_age_s:
+                return None
+            state = seen[0]
+        else:
+            state = self._bridge._heard_state()
+        return in_doubt_report(job, state, vehicle=name, forwarded=False)
+
     def machines(self) -> dict[str, dict[str, str]]:
         out: dict[str, dict[str, str]] = {}
         for name, vehicle in self._fleet.items():
@@ -325,13 +347,19 @@ class FleetExtension(BridgeExtension):
     def inline(self, topic: str) -> bool:
         return topic in self._state_topics or topic in self._result_topics
 
+    def _report_for_job_in_doubt(self, job: BridgeJob) -> str | None:
+        gateway = self.gateway
+        return gateway.report_for_job_in_doubt(job) if gateway is not None else None
+
     def _ensure_gateway(self) -> FleetGateway:
         if self.gateway is None:
             bridge = self._bridge
             store = getattr(bridge, "_idempotency", None)
             if store is None:
                 store = self._own_store = IdempotencyStore()
-            self.gateway = FleetGateway(self.fleet, JobIntake(store, self._verifier), store, bridge, self._amr_key, self.settings)
+            consult = bool(getattr(bridge, "in_doubt_consult", False))
+            intake = JobIntake(store, self._verifier, in_doubt_policy=in_doubt_policy(consult), status_query=self._report_for_job_in_doubt)
+            self.gateway = FleetGateway(self.fleet, intake, store, bridge, self._amr_key, self.settings)
         return self.gateway
 
     def on_message(self, topic: str, payload: bytes, retained: bool) -> list[MqttPublish]:

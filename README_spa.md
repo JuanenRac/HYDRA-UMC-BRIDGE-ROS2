@@ -149,6 +149,7 @@ Para comprobar el plan de interfaces sin ROS 2: `python tools/inspect_interface_
 
 | Variable | Por defecto | Qué fija |
 |---|---|---|
+| `HYDRA_UMC_ROS2_IN_DOUBT_CONSULT` | desactivado | `1` responde a una clave de trabajo repetida cuyo primer intento no dejó respuesta con el estado que informan la máquina, el vehículo o el movimiento en curso, en lugar de rechazarla; no se ejecuta nada de nuevo |
 | `HYDRA_UMC_ROS2_MTLS` | desactivado | `1` hace que el bridge presente un certificado de cliente al servidor (TLS mutuo) y compruebe el certificado del servidor contra una sola CA, TLS 1.2 o superior. Necesita las rutas absolutas `HYDRA_UMC_ROS2_MTLS_CA`, `HYDRA_UMC_ROS2_MTLS_CERT` y `HYDRA_UMC_ROS2_MTLS_KEY`; se rechaza la clave si otros usuarios pueden leerla (modo 0600) o si está dentro de un árbol de trabajo git, y no se pueden mezclar los ajustes `HYDRA_MQTT_TLS*` del SDK |
 | `HYDRA_UMC_ROS2_GLOBAL_STOP` | desactivado | `1` sigue la parada global del servidor: mientras el último anuncio del tema retenido `hydra/swarm/safety/estop` diga `SAFE_STOP` (o no se pueda leer), el bridge rechaza con un motivo: un trabajo (un aborto pasa); solo `READY` lo termina. `HYDRA_UMC_ROS2_GLOBAL_STOP_TOPIC` cambia el tema y `HYDRA_UMC_ROS2_GLOBAL_STOP_STRICT=1` rechaza también hasta que llegue el primer anuncio |
 | `HYDRA_MQTT_USERNAME` | ninguno | El usuario MQTT; el broker lo liga a un prefijo de ID de cliente |

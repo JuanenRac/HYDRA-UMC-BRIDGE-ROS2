@@ -55,7 +55,7 @@ import time
 from dataclasses import asdict
 from typing import Any, Callable
 
-from hydra_umc_sdk.bridge_contract import CellState, JobPhase, MachineState
+from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, MachineState
 from hydra_umc_sdk.job_intake import IdempotencyStore, JobIntake
 from hydra_umc_sdk.bridge_transport import BridgeHardening, hardening_from_environment
 
@@ -67,6 +67,7 @@ from hydra_umc_sdk.bridge_transport import MqttPublish, connect_with_retry, open
 from hydra_umc_sdk.global_stop import GlobalStopGuard, GlobalStopSettings, follow_on_connect
 from .coordinator import Ros2Coordinator, Ros2Dispatch
 from .extensions import BridgeExtension, ExtensionHost
+from .in_doubt import in_doubt_consult_from_environment, in_doubt_policy, in_doubt_report
 from .rclpy_transport import Ros2Node, Ros2SafeStopClient, Ros2StateSubscriber, SubscribeResult, spin_node_in_background
 
 _LOG = logging.getLogger(__name__)
@@ -153,6 +154,7 @@ class Ros2MqttBridge:
         global_stop: GlobalStopGuard | GlobalStopSettings | None = None,
         abort_calls_safe_stop: bool = True,
         safe_stop_client: Ros2SafeStopClient | None = None,
+        in_doubt_consult: bool | None = None,
     ) -> None:
         self.node = node
         self._cell_state = cell_state
@@ -168,7 +170,9 @@ class Ros2MqttBridge:
         # docs/BRIDGE_CONTRACT.md: the idempotency key of a job is handled once; a repeat gets the answer that was given
         self._idempotency = idempotency
         # the shared first look at a job: malformed ones are refused and a repeated idempotency key is recognised (the same intake as the other bridges)
-        self._intake = JobIntake(idempotency)
+        # a repeated key whose first attempt left no answer is refused, or (HYDRA_UMC_ROS2_IN_DOUBT_CONSULT=1, off by default) answered with the state the ROS 2 state topic reports now; it is never run again
+        self.in_doubt_consult = in_doubt_consult_from_environment() if in_doubt_consult is None else bool(in_doubt_consult)
+        self._intake = JobIntake(idempotency, in_doubt_policy=in_doubt_policy(self.in_doubt_consult), status_query=self._report_for_job_in_doubt)
         # follows the global stop that the server announces (global_stop.py); off unless HYDRA_UMC_ROS2_GLOBAL_STOP=1 or a guard is given
         if isinstance(global_stop, GlobalStopGuard):
             self.global_stop = global_stop
@@ -195,6 +199,14 @@ class Ros2MqttBridge:
         except ValueError:
             self._observed = None
         self._observed_at = self._clock()
+
+    def _heard_state(self) -> MachineState | None:
+        """The state the ROS 2 state topic really gave and that is still young enough to count; None when none was heard, it was not a state, or it is too old (unlike `_observed_state`, never OFFLINE by absence)."""
+        if not self._observing or self._observed is None:
+            return None
+        if self._observed_max_age is not None and self._clock() - self._observed_at > self._observed_max_age:
+            return None
+        return self._observed
 
     def _observed_state(self) -> MachineState | None:
         if not self._observing:
@@ -256,6 +268,14 @@ class Ros2MqttBridge:
             _LOG.exception("could not handle %s", topic)
             return _extension_refusal(answer_to, f"the command could not be handled: {type(error).__name__}")
 
+    def _report_for_job_in_doubt(self, job: BridgeJob) -> str | None:
+        """What the machine says now about a job whose first attempt left no answer (the `status_query` of the shared intake).
+
+        It is a reading, not a decision: the job is not evaluated and nothing is called. A state that was never heard, or is too old to count, gives no answer and the repeat is refused.
+        """
+
+        return in_doubt_report(job, self._heard_state(), accepted=False, interface="none", mode="plan-only")
+
     def _handle_job(self, payload: bytes) -> MqttPublish:
         result_topic = f"{TOPIC_PREFIX}cmd/job/result"
         try:
@@ -272,6 +292,8 @@ class Ros2MqttBridge:
             # an ABORT is repeated when its key was already handled: asking for a stop twice is harmless and a first attempt that died half way must not leave the machine running
             if not (job.phase is JobPhase.ABORT and self.abort_calls_safe_stop):
                 stored = self._idempotency.recall(job.idempotency_key) if self._idempotency is not None else None
+                if stored is None and intake.in_doubt:
+                    stored = self._intake.resolve_in_doubt(job)
                 if stored is None:
                     stored = json.dumps({"allowed": False, "accepted": False, "interface": "none", "reason": intake.reason, "mode": "plan-only"})
                 return MqttPublish(result_topic, stored)

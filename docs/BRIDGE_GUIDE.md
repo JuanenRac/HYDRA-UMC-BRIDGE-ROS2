@@ -113,6 +113,10 @@ While the last announcement says `SAFE_STOP`, says anything but `READY`, or cann
 
 **The interface package is built and checked in a container.** The workflow "ROS 2 bench" builds `interfaces/hydra_umc_interfaces` with colcon in a ROS 2 container and runs `tests/ros2/`, which compares the generated types with the contract files, exercises a real node, the state topic with its expiry, the safe-stop service, the entry point and its parameter file. A container with nodes of its own is not a robot.
 
+## A job whose first attempt left no answer
+
+A job key is handled once. When a key was claimed but no answer was stored (the bridge stopped between the claim and the answer), the repeat of that key is refused with a reason that says the key was already handled and no answer was stored for it, and the job is never run again. With `HYDRA_UMC_ROS2_IN_DOUBT_CONSULT=1` (default off) the bridge instead answers the repeat with what the system reports now, with `in_doubt: true` and `forwarded: false`: on `cmd/job` the machine state read from the ROS 2 state topic (`machine_state`); in the fleet extension the state of the vehicle named by the job (`machine_state` and `vehicle`); in the Nav2 and MoveIt extensions the machine state and `goal_running`, which says whether the goal of that very job is still running. The reading is stored under the key, so a further repeat gets the same answer. It is a reading, not a decision: the gate is not asked again, no goal is sent or cancelled, nothing is forwarded and `allowed` stays `false`. A state that was never heard or is too old to count, an AMR bridge that never published its state, and a vehicle that is not in the fleet list leave the repeat refused. Exercised without ROS 2 only.
+
 ## Hardware acceptance gate
 
 Before deploying an adapter: select the ROS 2 distribution and middleware, document namespaces/types/QoS, bind authenticated robot identity, verify stale/disconnected-state behavior, test abort independently, and perform bench/HIL validation. The native ROS controller remains responsible for motion safety.
