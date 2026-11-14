@@ -56,6 +56,10 @@ the certificate to the client ID with `MQTT_TLS_CERT_IDENTITY=1`. The tests make
 against a local TLS server that demands the certificate (accepted with the right certificate, refused with one from another CA, and the bridge refuses a server
 from another CA or with another name). Not run against the real broker.
 
+## Requiring ROS 2 security (SROS2)
+
+`security.require_sros2` in the service configuration (off by default, so a deployment without a keystore keeps starting) makes the service refuse to start unless SROS2 is fully on in its environment: `ROS_SECURITY_ENABLE=true`, `ROS_SECURITY_STRATEGY=Enforce` and a `ROS_SECURITY_KEYSTORE` that holds the `enclaves` directory. A refusal is a configuration error (exit code 2) that names what is missing, and `--check` reports it too. The keystore and the enclave of the node are made with the SROS2 tools of the ROS 2 distribution; this service never creates keys.
+
 ## The ROS 2 interface package
 
 `interfaces/hydra_umc_interfaces` is a plain `ament_cmake` package with the three types the plan needs and the standard
