@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+
+## [0.1.8]
+
 - **A route for the requirement of ROS 2 security (`GET` and `POST /settings/sros2`, closed unless opened with `--settings-port` and `--identity-key-file`):** HYDRA-UMC-SERVER can read `security.require_sros2` (the value in the file, the value the service started with, whether a restart is needed, whether the ROS 2 security variables are set) and, only when the service was started with `--allow-settings-change`, an administrator can change it with `confirm: true` in both directions. The change is written to the configuration file, keeping every other key and refusing a result that would not load, and applies when the service restarts; the answer says so. Every request needs a valid signed token of the server (`server_identity.py`, the same module as the other Python services), a port without the key is a configuration error, and nothing is open by default. `tests/test_settings_http.py` runs it against a real listener on loopback.
 
 
@@ -32,6 +35,9 @@ All notable changes to this project are documented here.
 - **The `.msg`, `.srv` and `.action` contracts of the plan are written, versioned and checked without ROS 2:** `interfaces/hydra_umc_interfaces` is the `ament_cmake` package with `srv/InspectCell`, `action/ExecuteCellJob` and `msg/CellStatus`; `hydra_umc_bridge_ros2.interface_contract` parses them, refuses types outside the built-in ones and any field that could carry a motion, and fails when the phase and state constants differ from the SDK (`JobPhase`, `CellState`, `MachineState`), when an abort becomes a goal, when a goal claims the state of the machine or lacks what a `BridgeJob` carries. `tests/fixtures/interface-contract-v1.json` is the published fixture and `inspect_interface_plan.py --verify-contract` (also a step of the simulation bench) compares against it; 21 new tests. The bridge does not use the new types yet and the package has not been built with `colcon`; signing in to the server stays as it is.
 
 - **The tests have a coverage floor of 95 %:** `tools/coverage_floor.json` holds the measured line and branch coverage of the bridge, rounded down (95.9 % measured in the CI environment), and `python tools/hydra_project_tool.py coverage` warns when it falls below it (a warning, not a CI check). Tooling only: no behaviour changes.
+
+- Successful incremental build: synchronized package metadata and `hydra-umc.project.json`.
+
 ## [0.1.7] - A visible simulation bench: the workflow "Simulation bench" runs the emulators and fakes of the bridge without hardware on every push, by hand and once a week; docs/SIMULATION.md says what it exercises and what it cannot show. (and 1 more changes)
 
 - **A visible simulation bench:** the workflow "Simulation bench" runs the emulators and fakes of the bridge without hardware on every push, by hand and once a week; `docs/SIMULATION.md` says what it exercises and what it cannot show.
