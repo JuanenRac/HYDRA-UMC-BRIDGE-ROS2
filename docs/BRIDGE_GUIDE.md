@@ -60,6 +60,15 @@ from another CA or with another name). Not run against the real broker.
 
 `security.require_sros2` in the service configuration (off by default, so a deployment without a keystore keeps starting) makes the service refuse to start unless SROS2 is fully on in its environment: `ROS_SECURITY_ENABLE=true`, `ROS_SECURITY_STRATEGY=Enforce` and a `ROS_SECURITY_KEYSTORE` that holds the `enclaves` directory. A refusal is a configuration error (exit code 2) that names what is missing, and `--check` reports it too. The keystore and the enclave of the node are made with the SROS2 tools of the ROS 2 distribution; this service never creates keys.
 
+### Reading and changing it from STUDIO and SUITE
+
+The requirement lives in the configuration file, so STUDIO and SUITE reach it through HYDRA-UMC-SERVER (`GET` and `POST /api/ros2-bridge/settings`), which carries the signed token of the person who asks to a small route of this service. The route is closed unless the operator opens it: start the service with `--settings-port PORT` (it listens on loopback; `--settings-host` changes that) and `--identity-key-file FILE`, the file with the signing key of the SERVER (or `HYDRA_UMC_BRIDGE_ROS2_IDENTITY_KEY_FILE`); a port without the key is a configuration error, and every request needs a valid signed token.
+
+- `GET /settings/sros2` (any role): `requireSros2` (the value now in the file), `active` (the value this running service started with), `restartNeeded` (they differ), `canChange` (the service was started allowing the change) and `environmentReady` (the three ROS 2 security variables are set in the environment of the service).
+- `POST /settings/sros2` (administrator only): `{"requireSros2": true|false, "confirm": true}`, with `confirm` in both directions. It needs `--allow-settings-change`; without it the answer is 403 and the file is not touched. The value is written to the configuration file (every other key stays, and a file that would no longer load is refused with 409) and **applies when the service restarts**: nothing about the running service changes, and the answer says `appliesAfterRestart: true`. Turning it on with the ROS 2 security variables missing makes the next start refuse, so check `environmentReady` first.
+
+The route was run against a real listener on loopback with signed test tokens; it has not been run against a real ROS 2 keystore.
+
 ## The ROS 2 interface package
 
 `interfaces/hydra_umc_interfaces` is a plain `ament_cmake` package with the three types the plan needs and the standard
