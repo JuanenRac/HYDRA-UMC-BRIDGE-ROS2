@@ -85,6 +85,52 @@ class FileTests(unittest.TestCase):
             self.assertEqual([item.name for item in Path(folder).iterdir()], ["bridge.json"])
 
 
+class FileRefusalTests(unittest.TestCase):
+    def refused(self, content: str | None) -> str:
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "bridge.json"
+            if content is not None:
+                path.write_text(content, encoding="utf-8")
+            with self.assertRaises(ValueError) as caught:
+                write_required(path, True, load_service_config)
+            return str(caught.exception)
+
+    def test_a_file_that_is_not_json_an_object_or_with_a_wrong_security_section_is_refused(self):
+        self.assertIn("cannot read", self.refused("not json"))
+        self.assertIn("JSON object", self.refused("[1, 2]"))
+        self.assertIn("'security' must be a JSON object", self.refused(json.dumps({"security": 3})))
+
+    def test_a_missing_file_is_created_with_the_one_key(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "bridge.json"
+            write_required(path, True, load_service_config)
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), {"security": {"require_sros2": True}})
+            self.assertEqual(sorted(item.name for item in Path(folder).iterdir()), ["bridge.json"])
+
+
+class BodyTests(unittest.TestCase):
+    def raw_post(self, listener: Listener, payload: bytes) -> int:
+        request = Request(listener.base + "/settings/sros2", data=payload, method="POST", headers={"Authorization": f"Bearer {sign_token(KEY, 'tester', 'admin')}"})
+        try:
+            with urlopen(request, timeout=5) as response:  # noqa: S310
+                return response.status
+        except HTTPError as error:
+            error.close()
+            return error.code
+
+    def test_a_body_that_is_empty_too_big_not_json_or_not_an_object_is_refused(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "bridge.json"
+            path.write_text("{}", encoding="utf-8")
+            listener = Listener(settings_for(path))
+            try:
+                for payload in (b"", b"x" * 5000, b"{not json", b"[1]", bytes([255, 254])):
+                    self.assertEqual(self.raw_post(listener, payload), 400, payload[:10])
+            finally:
+                listener.close()
+            self.assertEqual(path.read_text(encoding="utf-8"), "{}")
+
+
 class RouteTests(unittest.TestCase):
     def setUp(self):
         self.folder = tempfile.TemporaryDirectory()
