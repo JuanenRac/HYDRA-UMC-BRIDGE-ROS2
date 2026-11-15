@@ -246,7 +246,8 @@ HYDRA-UMC-BRIDGE-ROS2/
 │   ├── rclpy_transport.py         les deux interfaces rclpy à types standard
 │   ├── mqtt_transport.py          transport MQTT des commandes, de l'état et de l'arrêt sûr
 │   ├── mtls.py                    certificat client pour le serveur (TLS mutuel)
-│   └── interface_contract.py      lit et vérifie les fichiers .msg, .srv et .action
+│   ├── interface_contract.py      lit et vérifie les fichiers .msg, .srv et .action
+│   └── config_access.py           emplacement du fichier de configuration et contrôle d'accès
 ├── tests/                         155 tests, rclpy remplacé par un substitut
 ├── interfaces/                    paquet ROS 2 avec les types .msg, .srv et .action
 ├── docs/                          guide du bridge

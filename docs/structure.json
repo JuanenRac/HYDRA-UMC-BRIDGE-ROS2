@@ -82,6 +82,19 @@
             "zh": "读取并检查 .msg、.srv 和 .action 文件",
             "pt": "lê e verifica os ficheiros .msg, .srv e .action"
           }
+        },
+        {
+          "name": "config_access.py",
+          "desc": {
+            "en": "configuration file location and access check",
+            "es": "ubicación del fichero de configuración y comprobación de acceso",
+            "de": "Ort der Konfigurationsdatei und Zugriffsprüfung",
+            "fr": "emplacement du fichier de configuration et contrôle d'accès",
+            "it": "posizione del file di configurazione e verifica dell'accesso",
+            "ja": "設定ファイルの場所とアクセス確認",
+            "zh": "配置文件位置与访问检查",
+            "pt": "localização do ficheiro de configuração e verificação de acesso"
+          }
         }
       ]
     },
