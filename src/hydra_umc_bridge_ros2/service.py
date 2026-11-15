@@ -29,6 +29,18 @@ from typing import Callable
 from hydra_umc_sdk.bridge_contract import CellState, MachineState
 from hydra_umc_sdk.job_intake import IdempotencyStore
 
+from .config_access import (
+    DEFAULT_PARAMS_PATH,
+    DIRECTORY_NAME,
+    LEGACY_CONFIG_PATH,
+    LEGACY_PARAMS_PATH,
+    SERVICE_GROUP,
+    check_access_all,
+    ensure_directory,
+    group_exists,
+    migrate_legacy_config,
+    permission_problem,
+)
 from .extensions import ExtensionConfigError, build_extensions, parse_sections
 from .mqtt_transport import DEFAULT_OBSERVED_MAX_AGE_SECONDS, Ros2MqttBridge, run_forever
 from .rclpy_transport import create_ros2_node
@@ -102,7 +114,17 @@ def _section(raw: object, kind: type, name: str):
 
 def load_service_config(path: str | Path | None) -> ServiceConfig:
     """Read the service configuration; no file gives the defaults (a local broker, the conservative switches)."""
-    if path is None or not Path(path).is_file():
+    if path is None:
+        return ServiceConfig()
+    try:
+        is_file = Path(path).is_file()
+    except PermissionError as error:  # a directory on the way that the account cannot enter
+        raise ConfigError(f"cannot read {path}: {permission_problem(str(path)) or error}") from error
+    if not is_file:
+        # a file that is not there gives the defaults; one hidden by a permission must not look like that
+        hidden = permission_problem(str(path))
+        if hidden:
+            raise ConfigError(f"cannot read {path}: {hidden}")
         return ServiceConfig()
     try:
         raw = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -233,7 +255,30 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--settings-host", default="127.0.0.1", help="the address of that route (default: loopback)")
     parser.add_argument("--identity-key-file", default=None, help="the file with the signing key of HYDRA-UMC-SERVER that the route needs (or $HYDRA_UMC_BRIDGE_ROS2_IDENTITY_KEY_FILE)")
     parser.add_argument("--allow-settings-change", action="store_true", help="let an administrator of the SERVER change security.require_sros2 in the configuration file through that route (it applies at the next restart)")
+    parser.add_argument("--prepare-config", action="store_true", help="run as root before the service: set the directory of the service to mode 0750 and copy the configuration file and the parameter file of the earlier place there once, never overwriting and never deleting; exit 0 whether it copied, kept or found nothing")
+    parser.add_argument("--check-access", action="store_true", help="check that the account that runs this command can read --config and --params-path, then exit (0 when readable, 2 with the reason when not); an installer runs it as the service account")
+    parser.add_argument("--legacy-config", default=LEGACY_CONFIG_PATH, help=f"the earlier place of the configuration file, used by --prepare-config (default: {LEGACY_CONFIG_PATH})")
+    parser.add_argument("--params-path", default=DEFAULT_PARAMS_PATH, help=f"the ROS 2 parameter file of the service, read by --prepare-config and --check-access (default: {DEFAULT_PARAMS_PATH})")
+    parser.add_argument("--legacy-params", default=LEGACY_PARAMS_PATH, help=f"the earlier place of the parameter file, used by --prepare-config (default: {LEGACY_PARAMS_PATH})")
     args, _ros_arguments = parser.parse_known_args(argv)
+    if args.check_access:
+        code, message = check_access_all([args.config, args.params_path])
+        print(message, file=sys.stderr if code else sys.stdout)
+        return code
+    if args.prepare_config:
+        group = SERVICE_GROUP if group_exists(SERVICE_GROUP) else ""
+        try:
+            if Path(args.config).parent.name == DIRECTORY_NAME:  # the directory of the service, never a directory the operator named
+                ensure_directory(str(Path(args.config).parent), group)
+            outcomes = [
+                migrate_legacy_config(args.legacy_config, args.config, group),
+                migrate_legacy_config(args.legacy_params, args.params_path, group),
+            ]
+        except OSError as error:
+            print(f"hydra-umc-bridge-ros2: prepare-config: {type(error).__name__}: {error}", file=sys.stderr)
+            return 2
+        print(f"hydra-umc-bridge-ros2: prepare-config: configuration {outcomes[0]} ({args.config}), parameters {outcomes[1]} ({args.params_path})")
+        return 0
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     try:
         config = load_service_config(args.config)
