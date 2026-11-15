@@ -846,5 +846,99 @@ class AdapterTests(unittest.TestCase):
         self.assertTrue(all(client.destroyed for client in FakeActionClient.created))
 
 
+def stub_modules(**modules):
+    """Importable stand-ins for ROS 2 packages: {"pkg.sub": {"Name": value}} becomes real module objects (the parents are made too)."""
+    import types
+
+    made: dict[str, types.ModuleType] = {}
+    for dotted, names in modules.items():
+        parts = dotted.split(".")
+        for index in range(1, len(parts) + 1):
+            made.setdefault(".".join(parts[:index]), types.ModuleType(".".join(parts[:index])))
+        for name, value in names.items():
+            setattr(made[dotted], name, value)
+    return made
+
+
+class GapTests(unittest.TestCase):
+    """The branches the coverage job lists as not run: a retained replay, a timer that takes no flag, a client that will not close, and the imports that succeed."""
+
+    def test_a_retained_replay_is_ignored_without_an_answer_and_sends_nothing(self):
+        rig = Rig(self)
+        assert rig.extension.gateway is not None
+        self.assertEqual(rig.extension.gateway.handle(NAV2_VERB, NAV_TOPIC, signed(NAV_TOPIC, make_job(key="replay")), retained=True), [])
+        self.assertEqual(rig.nav.sent, [])
+        self.assertFalse(rig.extension.gateway.busy)
+
+    def test_a_timer_that_takes_no_daemon_flag_still_arms_the_timeout(self):
+        class BareTimer:
+            __slots__ = ("function", "delay", "started")
+
+            def __init__(self, delay, function):
+                self.delay, self.function, self.started = delay, function, False
+
+            def start(self):
+                self.started = True
+
+            def cancel(self):
+                pass
+
+        rig = Rig(self)
+        assert rig.extension.gateway is not None
+        rig.extension.gateway._timer_factory = BareTimer  # type: ignore[assignment]
+        answer = rig.send(NAV_TOPIC, signed(NAV_TOPIC, make_job(key="go")))
+        self.assertEqual(answer["goal_status"], "sent")
+        timer = rig.extension.gateway._timer
+        self.assertIsInstance(timer, BareTimer)
+        self.assertTrue(timer.started)
+        self.assertTrue(rig.extension.gateway.busy)
+
+    def test_a_client_that_will_not_close_does_not_stop_the_others_from_closing(self):
+        rig = Rig(self)
+        assert rig.extension.gateway is not None
+
+        def broken():
+            raise RuntimeError("client gone")
+
+        rig.nav.close = broken  # type: ignore[method-assign]
+        with self.assertLogs(ext_motion.__name__, "ERROR") as logs:
+            rig.extension.gateway.close()
+        self.assertIn("could not close an action client", logs.output[0])
+        self.assertTrue(rig.move.closed)
+        rig.nav.close = lambda: None  # type: ignore[method-assign]  # the clean-up of the rig closes the gateway once more
+
+    def test_the_nav2_messages_are_taken_from_their_packages_when_they_exist(self):
+        import sys
+        from unittest import mock
+
+        navigate, status = object(), object()
+        modules = stub_modules(**{"action_msgs.msg": {"GoalStatus": status}, "nav2_msgs.action": {"NavigateToPose": navigate}})
+        with mock.patch.dict(sys.modules, modules):
+            self.assertEqual(Nav2Adapter._import_messages(), (navigate, status))
+
+    def test_the_moveit_messages_are_taken_from_their_packages_when_they_exist(self):
+        import sys
+        from unittest import mock
+
+        group, constraints, joint, status = object(), object(), object(), object()
+        modules = stub_modules(
+            **{
+                "action_msgs.msg": {"GoalStatus": status},
+                "moveit_msgs.action": {"MoveGroup": group},
+                "moveit_msgs.msg": {"Constraints": constraints, "JointConstraint": joint},
+            }
+        )
+        with mock.patch.dict(sys.modules, modules):
+            self.assertEqual(MoveItAdapter._import_messages(), (group, constraints, joint, status))
+
+    def test_the_action_client_class_comes_from_rclpy_when_it_exists(self):
+        import sys
+        from unittest import mock
+
+        client = object()
+        with mock.patch.dict(sys.modules, stub_modules(**{"rclpy.action": {"ActionClient": client}})):
+            self.assertIs(ext_motion._action_client_class(), client)
+
+
 if __name__ == "__main__":
     unittest.main()
