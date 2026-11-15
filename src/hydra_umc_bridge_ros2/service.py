@@ -32,6 +32,8 @@ from hydra_umc_sdk.job_intake import IdempotencyStore
 from .extensions import ExtensionConfigError, build_extensions, parse_sections
 from .mqtt_transport import DEFAULT_OBSERVED_MAX_AGE_SECONDS, Ros2MqttBridge, run_forever
 from .rclpy_transport import create_ros2_node
+from .server_identity import identity_key_from
+from .settings_http import Sros2Settings, start_settings_server
 
 _LOG = logging.getLogger(__name__)
 CONFIG_ENVIRONMENT = "HYDRA_UMC_ROS2_CONFIG"
@@ -227,6 +229,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="hydra_umc_bridge_ros2", description="HYDRA-UMC ROS 2 bridge service (ROS arguments such as --ros-args --params-file are passed on to rclpy)")
     parser.add_argument("--config", default=os.environ.get(CONFIG_ENVIRONMENT, DEFAULT_CONFIG_PATH), help=f"configuration file (default: ${CONFIG_ENVIRONMENT} or {DEFAULT_CONFIG_PATH})")
     parser.add_argument("--check", action="store_true", help="read and validate the configuration, then exit")
+    parser.add_argument("--settings-port", type=int, default=0, help="open the route by which HYDRA-UMC-SERVER reads (and, with --allow-settings-change, changes) security.require_sros2 on this port; 0 (the default) keeps it closed")
+    parser.add_argument("--settings-host", default="127.0.0.1", help="the address of that route (default: loopback)")
+    parser.add_argument("--identity-key-file", default=None, help="the file with the signing key of HYDRA-UMC-SERVER that the route needs (or $HYDRA_UMC_BRIDGE_ROS2_IDENTITY_KEY_FILE)")
+    parser.add_argument("--allow-settings-change", action="store_true", help="let an administrator of the SERVER change security.require_sros2 in the configuration file through that route (it applies at the next restart)")
     args, _ros_arguments = parser.parse_known_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     try:
@@ -236,6 +242,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.check:
             print(f"CONFIG=PASS {args.config}")
             return 0
+        identity_key = None
+        if args.settings_port:
+            if not 0 < args.settings_port < 65536:
+                raise ConfigError("'--settings-port' must be a port from 1 to 65535")
+            identity_key = identity_key_from(args.identity_key_file)
+            if identity_key is None:
+                raise ConfigError("'--settings-port' needs the identity key of HYDRA-UMC-SERVER (--identity-key-file): the route is never open")
         bridge = build_bridge(config)
     except ValueError as error:  # ConfigError is a ValueError
         print(f"hydra-umc-bridge-ros2: configuration error: {error}", file=sys.stderr)
@@ -243,6 +256,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     except RuntimeError as error:
         print(f"hydra-umc-bridge-ros2: {error}", file=sys.stderr)
         return 3
+    if identity_key is not None:
+        try:
+            start_settings_server(
+                args.settings_host,
+                args.settings_port,
+                Sros2Settings(args.config, config.security.require_sros2, args.allow_settings_change, os.environ, sros2_problems, load_service_config),
+                identity_key,
+            )
+        except OSError as error:
+            print(f"hydra-umc-bridge-ros2: cannot open the settings route: {error}", file=sys.stderr)
+            return 2
     mqtt = config.mqtt
     # Restart=on-failure: a non-zero exit when the loop ends brings the service back
     try:
