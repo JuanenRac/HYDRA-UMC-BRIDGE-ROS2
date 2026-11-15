@@ -116,11 +116,15 @@ def load_service_config(path: str | Path | None) -> ServiceConfig:
     """Read the service configuration; no file gives the defaults (a local broker, the conservative switches)."""
     if path is None:
         return ServiceConfig()
-    if not Path(path).is_file():
-        # a directory the account cannot enter looks like a missing file: it must not silently give the defaults (they are the conservative ones, but not the ones somebody configured)
-        problem = permission_problem(str(path))
-        if problem:
-            raise ConfigError(f"cannot read {path}: {problem}")
+    try:
+        is_file = Path(path).is_file()
+    except PermissionError as error:  # a directory on the way that the account cannot enter
+        raise ConfigError(f"cannot read {path}: {permission_problem(str(path)) or error}") from error
+    if not is_file:
+        # a file that is not there gives the defaults; one hidden by a permission must not look like that
+        hidden = permission_problem(str(path))
+        if hidden:
+            raise ConfigError(f"cannot read {path}: {hidden}")
         return ServiceConfig()
     try:
         raw = json.loads(Path(path).read_text(encoding="utf-8"))
