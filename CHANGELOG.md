@@ -4,8 +4,12 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+
+## [0.1.9]
+
 - **The configuration and the parameter file live in a directory of the service, and the account of the service is proved able to read them:** the unit runs as `hydra-umc`, which cannot enter the shared `/etc/hydra-umc` (mode 0750, group of the agent), and a configuration file behind a directory the account cannot enter was taken for a missing file, so the service ran with the defaults. `docs/deploy/hydra-umc-bridge-ros2.service` now asks systemd for `/etc/hydra-umc-bridge-ros2` (`ConfigurationDirectory=`, mode 0750). New flags: `--prepare-config` (run as root by the first `ExecStartPre`: sets the directory to mode 0750 with the group of the service, copies the configuration file and the parameter file of the earlier place once, never overwriting, never deleting; exit 0 whether it copied, kept or found nothing; `--legacy-config`, `--params-path` and `--legacy-params` name the places) and `--check-access` (run as the service account by the second `ExecStartPre`, and by an installer before it stops a running service: exit 0 when both files can be read, 2 with the first directory or file the account cannot open). `load_service_config` now raises a `ConfigError` naming the directory when a permission, not a missing file, hides the configuration. The shared `/etc/hydra-umc` is never changed. `tests/test_config_access.py` covers the helpers, the flags, the refusal and the text of the unit. Not run on a CM5.
 
+- Successful incremental build: synchronized package metadata and `hydra-umc.project.json`.
 
 ## [0.1.8]
 
