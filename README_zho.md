@@ -27,7 +27,7 @@ GPL-3.0-or-later - see LICENSE
 
 > **诚实检查——今天真正可运行的部分：** 无依赖的协调核心（`coordinator.py` 中的 `Ros2Coordinator`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）、面向 `std_srvs/Trigger` 和 `std_msgs/String` 的真实（延迟导入的）`rclpy` 传输层（`rclpy_transport.py` 中的 `Ros2SafeStopClient`/`Ros2StateSubscriber`），以及 MQTT 命令/状态传输（`mqtt_transport.py`）都是真实的，并由 427 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。以上这些都从未针对真实的 ROS 2 安装、真实的 DDS 网络或真实的 MQTT broker 进行过验证——`test_rclpy_transport.py` 是针对一个伪造的节点/发布者运行的，`test_mqtt_transport.py` 是针对一个伪造的 broker 客户端运行的，因此这些测试甚至不需要安装 `rclpy`/`std_srvs`/`std_msgs` 就能通过。自定义的 `.srv`/`.action` 契约 `inspect_service`/`job_action` 已写在 `interfaces/hydra_umc_interfaces` 中，并在没有 ROS 2 的情况下与 SDK 核对 (`interface_contract.py`)，但目前还没有客户端使用它们，该包也从未用 `colcon` 构建过。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。 MQTT 传输层也已在开发机器上针对真实的 HYDRA-UMC-MQTT-BROKER 运行过(`tests/test_broker_integration.py`,未安装 broker 时会跳过):QoS 0、1、2 的发布与订阅、保留的可用性及其遗嘱消息,以及 broker 停止后重新启动时的恢复。
 
-> **安全与安防现状:**本生态系统不是经认证的安全系统。目前尚无硬件 E-STOP 通路,没有由固件强制执行的限位或联锁,也没有经过验证的运动指令;固件映像使用 CRC-32 和 Ed25519 签名校验,发布构建会拒绝已公开的开发密钥(中继之后的工具头和扩展板仍运行 URTC 的引导程序,它们使用共享密钥的 HMAC-SHA256 而不是签名);TLS 与双向 TLS 均为可选项,默认关闭;自制电路板尚未组装或测试。在依赖此处任何说法来保障人身安全之前,请先阅读[安全基线](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)和[威胁模型](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)。
+> **安全与安防现状:**本生态系统不是经认证的安全系统。目前尚无硬件 E-STOP 通路,没有由固件强制执行的限位或联锁,也没有经过验证的运动指令;固件映像使用 CRC-32 和 Ed25519 签名校验,发布构建会拒绝已公开的开发密钥(中继之后的 URTC 引导程序不再使用共享密钥:主板用公钥表校验 Ed25519 记录,扩展板只有在主板确认了该确切映像之后才会安装它);TLS 与双向 TLS 均为可选项,默认关闭;自制电路板尚未组装或测试。在依赖此处任何说法来保障人身安全之前,请先阅读[安全基线](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)和[威胁模型](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)。
 
 ---
 
@@ -52,7 +52,7 @@ GPL-3.0-or-later - see LICENSE
 
 | 领域 | 状态 | 在这里的含义 |
 |---|---|---|
-| 软件 | 🟡 | 主要用途可用；上面的诚实性检查列出了仍然缺少的内容 |
+| 软件 | 🟡 | 主要用途可用；本 README 中的诚实性检查列出了仍然缺少的内容 |
 | 测试 | 🟢 | 427 项自动测试，每次变更都会运行 |
 | 真实硬件 | 🟠 | 仅模拟：使用模拟器、替身或仿真测试；此版本没有在真实硬件上运行的记录 |
 | 接口与协议 | 🟡 | 提供的路由或消息已有文档，并用客户端测试过；尚未被所有客户端使用 |
