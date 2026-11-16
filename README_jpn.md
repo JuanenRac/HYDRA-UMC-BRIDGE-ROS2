@@ -27,7 +27,7 @@ GPL-3.0-or-later - see LICENSE
 
 > **誠実性チェック - 今日実際に動くもの:** 依存関係のない調整コア（`coordinator.py` の `Ros2Coordinator`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、`std_srvs/Trigger` と `std_msgs/String` 向けの本物の（遅延インポートされる）`rclpy` トランスポート（`rclpy_transport.py` の `Ros2SafeStopClient`/`Ros2StateSubscriber`）、および MQTT コマンド/状態トランスポート（`mqtt_transport.py`）は本物であり、427件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_rclpy_transport.py`、`test_mqtt_transport.py`）。これらはいずれも、本物の ROS 2 インストール、本物の DDS ネットワーク、あるいは本物の MQTT ブローカーに対しては検証されていない - `test_rclpy_transport.py` は模擬ノード/パブリッシャーに対して実行され、`test_mqtt_transport.py` も模擬ブローカークライアントに対して実行されるため、これらのテストの通過には `rclpy`/`std_srvs`/`std_msgs` すらインストールされている必要がない。カスタムの `.srv`/`.action` 契約である `inspect_service`/`job_action` は `interfaces/hydra_umc_interfaces` に書かれ、ROS 2 なしで SDK と照合されている (`interface_contract.py`) が、まだそれを使うクライアントはなく、パッケージは一度も `colcon` でビルドされていない。詳細は下記の「ロードマップと既知の制限」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。 MQTT トランスポートは、開発用マシン上の本物の HYDRA-UMC-MQTT-BROKER に対しても実行されています(`tests/test_broker_integration.py`。ブローカーが未インストールの場合はスキップされます)。QoS 0・1・2 でのパブリッシュとサブスクライブ、保持された可用性とそのラストウィル、ブローカーが停止して再起動した後の復帰を確認しています。
 
-> **安全性とセキュリティの現状:** このエコシステムは認証された安全システムではありません。ハードウェアの E-STOP 経路、ファームウェアが強制する制限やインターロック、検証済みの動作コマンドはまだありません。ファームウェアイメージは CRC-32 と Ed25519 署名で検査し、リリースビルドは公開済みの開発用鍵を拒否します(リレーの先のツールヘッドと拡張ボードは引き続き URTC のブートローダーを使い、署名ではなく共有鍵の HMAC-SHA256 を使います)。TLS と相互 TLS は任意で、既定では無効です。独自基板はまだ実装も試験もされていません。ここに書かれた内容を人の安全のために頼る前に、[セキュリティベースライン](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)と[脅威モデル](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)をお読みください。
+> **安全性とセキュリティの現状:** このエコシステムは認証された安全システムではありません。ハードウェアの E-STOP 経路、ファームウェアが強制する制限やインターロック、検証済みの動作コマンドはまだありません。ファームウェアイメージは CRC-32 と Ed25519 署名で検査し、リリースビルドは公開済みの開発用鍵を拒否します(リレーの先の URTC のブートローダーは共有鍵を使わなくなりました。メイン基板が公開鍵の表に対して Ed25519 のレコードを検証し、拡張ボードはメイン基板がそのイメージ自体を確認した場合にだけイメージをインストールします)。TLS と相互 TLS は任意で、既定では無効です。独自基板はまだ実装も試験もされていません。ここに書かれた内容を人の安全のために頼る前に、[セキュリティベースライン](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)と[脅威モデル](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)をお読みください。
 
 ---
 
@@ -52,7 +52,7 @@ GPL-3.0-or-later - see LICENSE
 
 | 領域 | 状態 | ここでの意味 |
 |---|---|---|
-| ソフトウェア | 🟡 | 主な目的では動作します。足りない点は上の正直さの確認に書かれています |
+| ソフトウェア | 🟡 | 主な目的では動作します。足りない点はこの README の正直さの確認に書かれています |
 | テスト | 🟢 | 自動テスト 427 件。変更のたびに実行されます |
 | 実機 | 🟠 | シミュレーションのみ：エミュレーター、模擬部品、シミュレーターで試験済み。このバージョンについて実機での動作記録はありません |
 | インターフェースとプロトコル | 🟡 | 提供するルートやメッセージは文書化され、クライアントで試験済みです。すべてのクライアントがまだ使ったわけではありません |
