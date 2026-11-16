@@ -450,6 +450,36 @@ class AbortTests(unittest.TestCase):
         self.assertEqual(rig.published[-1][1]["goal_status"], "canceled")
         self.assertFalse(rig.extension.gateway.busy)  # type: ignore[union-attr]
 
+    def test_a_global_stop_a_safe_stop_and_an_abort_job_cancel_the_running_goal(self):
+        # the announcement of the global stop: the goal that is running is cancelled, not only the new commands refused
+        rig = Rig(self)
+        rig.send(NAV_TOPIC, signed(NAV_TOPIC, make_job(key="go-1")))
+        self.assertEqual(rig.nav.cancels, 0)
+        self.assertEqual(rig.bridge.observe_global_stop(READY), "READY")
+        self.assertEqual(rig.nav.cancels, 0)  # clear: nothing is cancelled
+        rig.bridge.observe_global_stop(STOPPED)
+        self.assertEqual(rig.nav.cancels, 1)
+        # an announcement that cannot be read is a stop too
+        rig.bridge.observe_global_stop(b"not json")
+        self.assertEqual(rig.nav.cancels, 2)
+        rig.bridge.observe_global_stop(READY)
+        # cmd/safe_stop, which needs no signature, cancels the goal as well and calls the service
+        rig.bridge.handle_message(f"{TOPIC_PREFIX}cmd/safe_stop", b"{}")
+        self.assertEqual(rig.nav.cancels, 3)
+        self.assertEqual(rig.safe_stop.calls, 1)
+        # and so does an ABORT of the general job topic
+        rig.bridge.handle_message(f"{TOPIC_PREFIX}cmd/job", json.dumps(job_to_dict(make_job(JobPhase.ABORT, key="a-1", target=None))).encode())
+        self.assertEqual(rig.nav.cancels, 4)
+
+    def test_a_motion_that_cannot_cancel_does_not_keep_the_stop_from_going_on(self):
+        rig = Rig(self)
+        rig.send(NAV_TOPIC, signed(NAV_TOPIC, make_job(key="go-1")))
+        rig.nav.cancel = lambda: (_ for _ in ()).throw(RuntimeError("action server gone"))  # type: ignore[assignment]
+        rig.bridge.observe_global_stop(STOPPED)  # does not raise
+        out = rig.bridge.handle_message(f"{TOPIC_PREFIX}cmd/safe_stop", b"{}")
+        self.assertEqual(rig.safe_stop.calls, 1)
+        self.assertTrue(out)
+
     def test_an_abort_with_nothing_running_still_calls_the_safe_stop_and_says_so(self):
         rig = Rig(self)
         answer = rig.send(NAV_TOPIC, signed(NAV_TOPIC, make_job(JobPhase.ABORT, key="stop", target=None)))

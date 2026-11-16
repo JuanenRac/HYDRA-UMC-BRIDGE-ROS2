@@ -64,7 +64,7 @@ from .mtls import settings_from_environment as mtls_settings_from_environment
 from hydra_umc_sdk.bridge_transport import MessageDispatcher as SharedMessageDispatcher
 from hydra_umc_sdk.bridge_transport import MqttPublish, connect_with_retry, open_bridge_client  # noqa: F401
 
-from hydra_umc_sdk.global_stop import GlobalStopGuard, GlobalStopSettings, follow_on_connect
+from hydra_umc_sdk.global_stop import STATE_READY, GlobalStopGuard, GlobalStopSettings, follow_on_connect
 from .coordinator import Ros2Coordinator, Ros2Dispatch
 from .extensions import BridgeExtension, ExtensionHost
 from .in_doubt import in_doubt_consult_from_environment, in_doubt_policy, in_doubt_report
@@ -245,11 +245,22 @@ class Ros2MqttBridge:
         try:
             if suffix == "cmd/job":
                 return [self._handle_job(payload)]
+            # the goals that the extensions have moving are cancelled first and whatever the service then says: a stop is never conditional
+            self.extensions.stop_motion()
             result = self._safe_stop.call(self.node, self._coordinator.safe_stop_service)
             return [MqttPublish(f"{TOPIC_PREFIX}cmd/safe_stop/result", json.dumps(asdict(result)))]
         except Exception as error:  # noqa: BLE001 - nothing a message does may end the loop
             _LOG.exception("could not handle %s", topic)
             return _refusal(suffix, f"the command could not be handled: {type(error).__name__}")
+
+    def observe_global_stop(self, payload: bytes) -> str:
+        """One message of the global stop announcement: the guard takes it, and anything but a clear READY also cancels the goals that the extensions have moving.
+
+        Refusing new commands is not enough: a goal that Nav2 or MoveIt already has keeps going until somebody cancels it."""
+        state = self.global_stop.observe(payload)
+        if state != STATE_READY:
+            self.extensions.stop_motion()
+        return state
 
     def _handle_extension(self, extension: BridgeExtension, topic: str, payload: bytes, retained: bool) -> list[MqttPublish]:
         """A message of a topic that an extension claims. Under the prefix of the bridge a command is refused while the global stop of the server is active when the extension
@@ -297,6 +308,8 @@ class Ros2MqttBridge:
                 if stored is None:
                     stored = json.dumps({"allowed": False, "accepted": False, "interface": "none", "reason": intake.reason, "mode": "plan-only"})
                 return MqttPublish(result_topic, stored)
+        if job.phase is JobPhase.ABORT:
+            self.extensions.stop_motion()  # an abort that reaches this point also stops the goals of the extensions
         dispatch_result = self._coordinator.dispatch(job, self._cell_state(), self._observed_state())
         answer = json.loads(_dispatch_result(dispatch_result))
         if dispatch_result.accepted and job.phase is JobPhase.ABORT and self.abort_calls_safe_stop:
@@ -362,7 +375,11 @@ class MessageDispatcher(SharedMessageDispatcher):
         topic = getattr(message, "topic", None)
         claimed = self._extensions.claiming(topic) if self._extensions is not None and isinstance(topic, str) else None
         if guard is not None and guard.enabled and topic == guard.topic:
-            guard.observe(bytes(message.payload))  # type: ignore[attr-defined]
+            observe = getattr(self._bridge_handler, "observe_global_stop", None)
+            if callable(observe):
+                observe(bytes(message.payload))  # type: ignore[attr-defined]
+            else:
+                guard.observe(bytes(message.payload))  # type: ignore[attr-defined]
             if claimed is None:
                 return
         if claimed is not None and isinstance(topic, str) and claimed.inline(topic):

@@ -342,15 +342,22 @@ class MotionGateway:
             except Exception:  # noqa: BLE001 - a lost status message must not break the adapter callback
                 _LOG.exception("could not publish the status of %s", active.job_id)
 
+    def cancel_active(self) -> bool:
+        """Cancel the goal that is running, if any (a global stop, a safe stop or an abort). Never raises; True when the adapter took the cancel."""
+        with self._lock:
+            active = self._active
+        if active is None:
+            return False
+        try:
+            return bool(self._routes[active.verb][0].cancel())
+        except Exception:  # noqa: BLE001 - the stop must go on
+            _LOG.exception("could not cancel the goal of %s", active.job_id)
+            return False
+
     def _abort(self, job: BridgeJob) -> dict[str, object]:
         with self._lock:
             active = self._active
-        cancelled = False
-        if active is not None:
-            try:
-                cancelled = bool(self._routes[active.verb][0].cancel())
-            except Exception:  # noqa: BLE001 - the safe stop below is still asked for
-                _LOG.exception("could not cancel the goal of %s", active.job_id)
+        cancelled = self.cancel_active()
         body: dict[str, object] = {"allowed": True, "job_id": job.job_id, "goal_status": "abort", "cancelled": cancelled, "running": active.job_id if active is not None else None}
         if self._safe_stop is not None:
             stop = self._safe_stop()
@@ -580,6 +587,11 @@ class MotionExtension(BridgeExtension):
         if gateway is None:
             return [MqttPublish(f"{topic}/result", json.dumps({"allowed": False, "reason": "the motion extension has not started", "goal_status": "refused"}))] if not retained else []
         return gateway.handle(self._topics[topic], topic, payload, retained)
+
+    def stop_motion(self) -> None:
+        gateway = self.gateway
+        if gateway is not None:
+            gateway.cancel_active()
 
     def _report_for_job_in_doubt(self, job: BridgeJob) -> str | None:
         gateway = self.gateway

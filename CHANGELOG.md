@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A global stop, a safe stop and an abort cancel the goal that Nav2 or MoveIt is running:** with the motion extension on, the announcement of the global stop only refused new commands, and `cmd/safe_stop` and the abort of `cmd/job` called the safe stop service without touching the goal in progress, so the vehicle or the arm kept going until the goal ended. Every extension now has a `stop_motion` hook that cancels what it has moving; it runs when the announcement is anything but a clear READY (unreadable included), on `cmd/safe_stop` before the service is called, and on an abort of `cmd/job`. A cancel that fails does not keep the rest of the stop from going out. 2 new tests.
+
 
 ## [0.1.9]
 

@@ -60,6 +60,10 @@ class BridgeExtension:
     def start(self, node: Any, publish: Publish) -> None:
         return None
 
+    def stop_motion(self) -> None:
+        """Cancel whatever this extension has moving, at once. Called on a global stop, a safe stop and an abort; it only ever stops things and never raises."""
+        return None
+
     def stop(self) -> None:
         return None
 
@@ -98,6 +102,14 @@ class ExtensionHost:
 
     def job_verbs(self) -> frozenset[str]:
         return frozenset(verb for item in self._items for verb in item.job_verbs)
+
+    def stop_motion(self) -> None:
+        """Ask every extension to cancel what it has moving; one that fails does not keep the others from stopping."""
+        for item in self._items:
+            try:
+                item.stop_motion()
+            except Exception:  # noqa: BLE001 - the stop of the others must still go out
+                _LOG.exception("could not stop the motion of the extension %s", item.name)
 
     def start(self, node: Any, publish: Publish) -> None:
         """Start every extension; when one fails the ones already started are stopped and the error goes on (an enabled extension that cannot run is not skipped)."""
