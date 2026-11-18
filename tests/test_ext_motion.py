@@ -563,6 +563,109 @@ class CancelVerbTests(unittest.TestCase):
         self.assertEqual(again["goal_status"], first["goal_status"])
 
 
+class SuperviseTests(unittest.TestCase):
+    """The goal is watched while it runs when `supervise_s` is above 0, and not at all when it is 0."""
+
+    def rig(self, supervise_s: float = 3.0):
+        rig = Rig(self, supervise_s=supervise_s)
+        gateway = rig.extension.gateway
+        assert gateway is not None
+        rig.now = [100.0]
+        gateway._clock = lambda: rig.now[0]  # type: ignore[assignment]
+        return rig, gateway
+
+    def start(self, rig):
+        rig.send(NAV_TOPIC, signed(NAV_TOPIC, make_job(key="go")))
+        return FakeTimer.created[-1]
+
+    def test_it_is_off_by_default_and_asks_for_no_timer_of_its_own(self):
+        rig = Rig(self)
+        self.assertEqual(parse({"enabled": False}).supervise_s, 0.0)
+        self.start(rig)
+        self.assertEqual(len(FakeTimer.created), 1)  # only the time limit of the goal
+        rig.cell = CellState.SAFE_STOP
+        rig.nav.callback("accepted", "ok")
+        self.assertEqual(rig.nav.cancels, 0)
+
+    def test_the_value_is_a_number_from_zero_to_an_hour(self):
+        for bad in (-1, 3601, float("nan"), float("inf"), True, "3"):
+            with self.assertRaises(ExtensionConfigError, msg=str(bad)):
+                Files(self).settings(supervise_s=bad)
+        self.assertEqual(Files(self).settings(supervise_s=2).supervise_s, 2)
+
+    def test_a_cell_that_is_not_ready_for_the_whole_time_cancels_the_goal(self):
+        rig, _gateway = self.rig()
+        self.start(rig)
+        watch = FakeTimer.created[-1]
+        self.assertEqual(watch.delay, 0.75)
+        rig.cell = CellState.INHIBITED
+        watch.function()  # first look: the clock starts
+        self.assertEqual(rig.nav.cancels, 0)
+        rig.now[0] += 2.0
+        FakeTimer.created[-1].function()
+        self.assertEqual(rig.nav.cancels, 0, "not for long enough yet")
+        rig.now[0] += 1.5
+        FakeTimer.created[-1].function()
+        self.assertEqual(rig.nav.cancels, 1)
+        last = rig.published[-1][1]
+        self.assertEqual(last["goal_status"], "canceled")
+        self.assertIn("the cell is INHIBITED", last["detail"])
+        self.assertFalse(rig.extension.gateway.busy)  # type: ignore[union-attr]
+
+    def test_a_cell_that_comes_back_ready_in_time_keeps_the_goal(self):
+        rig, _gateway = self.rig()
+        self.start(rig)
+        rig.cell = CellState.FAULT
+        FakeTimer.created[-1].function()
+        rig.now[0] += 2.0
+        rig.cell = CellState.READY
+        FakeTimer.created[-1].function()
+        rig.cell = CellState.FAULT
+        rig.now[0] += 2.0
+        FakeTimer.created[-1].function()  # a new bad spell starts here, not two seconds ago
+        rig.now[0] += 2.0
+        FakeTimer.created[-1].function()
+        self.assertEqual(rig.nav.cancels, 0)
+
+    def test_a_machine_state_that_is_not_heard_cancels_the_goal(self):
+        rig, gateway = self.rig(supervise_s=1.0)
+        self.start(rig)
+        gateway._observed_state = lambda: None  # type: ignore[assignment]
+        FakeTimer.created[-1].function()
+        rig.now[0] += 1.0
+        FakeTimer.created[-1].function()
+        self.assertEqual(rig.nav.cancels, 1)
+        self.assertIn("has not been heard", rig.published[-1][1]["detail"])
+
+    def test_a_reading_that_fails_counts_as_unsafe(self):
+        rig, gateway = self.rig(supervise_s=1.0)
+        self.start(rig)
+
+        def broken():
+            raise RuntimeError("no reading")
+
+        gateway._cell_state = broken  # type: ignore[assignment]
+        FakeTimer.created[-1].function()
+        rig.now[0] += 1.0
+        FakeTimer.created[-1].function()
+        self.assertEqual(rig.nav.cancels, 1)
+        self.assertIn("cannot be read", rig.published[-1][1]["detail"])
+
+    def test_the_watch_stops_with_the_goal_and_an_old_watch_does_not_touch_the_next_goal(self):
+        rig, _gateway = self.rig(supervise_s=1.0)
+        self.start(rig)
+        old = FakeTimer.created[-1]
+        rig.nav.callback("succeeded", "done")
+        self.assertTrue(old.cancelled)
+        rig.send(NAV_TOPIC, signed(NAV_TOPIC, make_job(key="next")))
+        rig.cell = CellState.SAFE_STOP
+        old.function()  # a late call of the first goal
+        rig.now[0] += 5.0
+        old.function()
+        self.assertEqual(rig.nav.cancels, 0)
+        self.assertTrue(rig.extension.gateway.busy)  # type: ignore[union-attr]
+
+
 class StatusTests(unittest.TestCase):
     def test_statuses_of_the_goal_are_published_and_the_last_one_frees_the_extension(self):
         rig = Rig(self)

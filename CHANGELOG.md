@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The motion extension can supervise the goal while it runs (`extensions.motion.supervise_s`, off by default):** with a number of seconds above 0, a cell that stops being READY, or a machine state that is not heard, for that long cancels the goal and the result says `canceled` with the reason. At 0 the goal only has its time limit, as before.
+
 - **The motion extension answers `cmd/motion_cancel`, which cancels the running goal without a signature:** it only ever stops things (it never starts a goal and does not call the safe stop service), runs on the lane of the stop commands, passes during a global stop and ignores a retained copy. `extensions.motion.unsigned_cancel` (true by default) turns it off, which leaves the cancel to the signed abort. A repeated abort is still answered from the store but now cancels the goal again.
 
 - **A global stop, a safe stop and an abort cancel the goal that Nav2 or MoveIt is running:** with the motion extension on, the announcement of the global stop only refused new commands, and `cmd/safe_stop` and the abort of `cmd/job` called the safe stop service without touching the goal in progress, so the vehicle or the arm kept going until the goal ended. Every extension now has a `stop_motion` hook that cancels what it has moving; it runs when the announcement is anything but a clear READY (unreadable included), on `cmd/safe_stop` before the service is called, and on an abort of `cmd/job`. A cancel that fails does not keep the rest of the stop from going out. 2 new tests.

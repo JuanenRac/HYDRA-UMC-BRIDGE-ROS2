@@ -16,7 +16,9 @@ What stands between a message on the broker and a goal for the robot, in this or
 4. one motion at a time: while a goal is running the next one is refused;
 5. the goal is a NAME that the operator wrote in a file (`nav2_waypoints_file`, `moveit_targets_file`). There are no coordinates and no joint values in the command, so a message cannot ask for a
    place the operator did not list. Nav2 goals use the frame of the settings; MoveIt goals scale velocity and acceleration (0.1 by default);
-6. the action server must be up now (nothing is queued for later), and a goal that has not finished after `goal_timeout_s` is cancelled.
+6. the action server must be up now (nothing is queued for later), and a goal that has not finished after `goal_timeout_s` is cancelled. With `supervise_s` above 0 the goal is also cancelled when,
+   while it runs, the cell stops being READY or the state of the machine is not heard for that many seconds (the topic of the machine may publish only when it changes: leave it off, the default,
+   unless that topic is kept alive).
 
 An `ABORT` job on either command topic cancels the running goal and, as for `cmd/job`, calls the safe-stop service when `node.abort_calls_safe_stop` is on. The answer says what was done. The extension
 never publishes a velocity or a trajectory of its own: Nav2 and MoveIt plan and move.
@@ -71,6 +73,8 @@ class MotionSettings:
     goal_timeout_s: float = 120.0
     # `cmd/motion_cancel` cancels the goal that is running without a signature (it only ever stops things); false refuses it and leaves the cancel to the signed abort
     unsigned_cancel: bool = True
+    # while a goal runs, a cell that is not READY or a machine state that has not been heard for this many seconds cancels it; 0 (the default) does not supervise
+    supervise_s: float = 0.0
     nav2_enabled: bool = False
     nav2_action: str = "navigate_to_pose"
     nav2_frame: str = "map"
@@ -159,6 +163,8 @@ def parse(section: object) -> MotionSettings:
         value = getattr(settings, key)
         if not math.isfinite(value) or not 0 < value <= top:
             raise ExtensionConfigError(f"'extensions.motion.{key}' must be a number of seconds above 0 and at most {top:g}")
+    if isinstance(settings.supervise_s, bool) or not isinstance(settings.supervise_s, (int, float)) or not math.isfinite(settings.supervise_s) or not 0 <= settings.supervise_s <= 3600:
+        raise ExtensionConfigError("'extensions.motion.supervise_s' must be a number of seconds from 0 (off) to 3600")
     for key in ("moveit_velocity_scale", "moveit_acceleration_scale"):
         value = getattr(settings, key)
         if not math.isfinite(value) or not 0 < value <= 1:
@@ -226,6 +232,7 @@ class MotionGateway:
         routes: dict[str, tuple[MotionAdapter, dict[str, Any]]],
         *,
         goal_timeout_s: float,
+        supervise_s: float = 0.0,
         safe_stop: Callable[[], dict[str, Any]] | None = None,
         publish: Callable[[], Publish | None] = lambda: None,
         heard_state: Callable[[], Any] | None = None,
@@ -239,6 +246,9 @@ class MotionGateway:
         self._heard_state = heard_state
         self._routes = routes
         self._timeout = goal_timeout_s
+        self._supervise_s = supervise_s
+        self._watch: Any = None
+        self._bad_since: float | None = None
         self._safe_stop = safe_stop
         self._publish = publish
         self._timer_factory = timer_factory
@@ -315,6 +325,8 @@ class MotionGateway:
                 return self._refuse(job, f"the goal could not be sent: {type(error).__name__}")
             if self._active is not None and self._active.token == token:  # a status that arrived while sending may have ended it already
                 self._arm_timeout(token)
+                self._bad_since = None
+                self._arm_supervision(token)
         return {"allowed": True, "reason": "goal sent", "mode": "send", "job_id": job.job_id, "target": target, "goal_status": "sent"}
 
     def _arm_timeout(self, token: int) -> None:
@@ -331,6 +343,62 @@ class MotionGateway:
         timer, self._timer = self._timer, None
         if timer is not None:
             timer.cancel()
+        watch, self._watch = self._watch, None
+        if watch is not None:
+            watch.cancel()
+
+    def _arm_supervision(self, token: int) -> None:
+        """Look again at the cell and the machine state soon, for as long as this goal runs (nothing when `supervise_s` is 0)."""
+        if self._supervise_s <= 0:
+            return
+        watch = self._timer_factory(max(0.05, min(1.0, self._supervise_s / 4)), lambda: self._supervise(token))
+        try:
+            watch.daemon = True
+        except AttributeError:
+            pass
+        self._watch = watch
+        watch.start()
+
+    def _unsafe_reason(self) -> str | None:
+        """Why the motion should not go on: the cell is not READY, or the state of the machine is not being heard. None when both are fine. A reader that fails is a reason."""
+        try:
+            cell = self._cell_state()
+            if getattr(cell, "value", cell) != "READY":
+                return f"the cell is {getattr(cell, 'value', cell)}"
+            if self._observed_state() is None:
+                return "the state of the machine has not been heard recently"
+        except Exception:  # noqa: BLE001 - a reading that cannot be made is not a safe reading
+            _LOG.exception("could not read the cell for the supervision")
+            return "the cell cannot be read"
+        return None
+
+    def _supervise(self, token: int) -> None:
+        with self._lock:
+            active = self._active
+            if active is None or active.token != token:
+                return
+            adapter = self._routes[active.verb][0]
+        reason = self._unsafe_reason()
+        now = self._clock()
+        with self._lock:
+            current = self._active
+            if current is None or current.token != token:
+                return
+            if reason is None:
+                self._bad_since = None
+                self._arm_supervision(token)
+                return
+            if self._bad_since is None:
+                self._bad_since = now
+            lasted = now - self._bad_since
+            if lasted < self._supervise_s:
+                self._arm_supervision(token)
+                return
+        try:
+            adapter.cancel()
+        except Exception:  # noqa: BLE001 - the supervision is reported whatever the cancel did
+            _LOG.exception("could not cancel the goal of %s", active.job_id)
+        self._on_status(token, "canceled", f"supervision: {reason} for {lasted:g} s; the goal was cancelled")
 
     def _timed_out(self, token: int) -> None:
         with self._lock:
@@ -644,6 +712,7 @@ class MotionExtension(BridgeExtension):
             bridge._observed_state,
             routes,
             goal_timeout_s=self.settings.goal_timeout_s,
+            supervise_s=self.settings.supervise_s,
             safe_stop=self._safe_stop,
             publish=lambda: self._publish,
             heard_state=getattr(bridge, "_heard_state", None),
