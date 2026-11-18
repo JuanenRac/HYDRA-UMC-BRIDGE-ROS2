@@ -117,14 +117,14 @@
         {
           "name": "tests/",
           "desc": {
-            "en": "155 tests, rclpy replaced by a stand-in",
-            "es": "155 pruebas, con rclpy sustituido por un doble",
-            "de": "155 Tests, rclpy durch einen Ersatz ersetzt",
-            "fr": "155 tests, rclpy remplacé par un substitut",
-            "it": "155 test, con rclpy sostituito da un surrogato",
-            "ja": "155 件（rclpy は代替物）",
-            "zh": "155 项测试（rclpy 用替身代替）",
-            "pt": "155 testes, com o rclpy substituído por um dublê"
+            "en": "463 tests, rclpy replaced by a stand-in",
+            "es": "463 pruebas, con rclpy sustituido por un doble",
+            "de": "463 Tests, rclpy durch einen Ersatz ersetzt",
+            "fr": "463 tests, rclpy remplacé par un substitut",
+            "it": "463 test, con rclpy sostituito da un surrogato",
+            "ja": "463 件（rclpy は代替物）",
+            "zh": "463 项测试（rclpy 用替身代替）",
+            "pt": "463 testes, com o rclpy substituído por um dublê"
           }
         },
         {
