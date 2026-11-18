@@ -36,6 +36,7 @@ An `ABORT` job on either topic cancels the running goal and, like `cmd/job`, cal
 | `require_global_stop` | `true` | the bridge must follow the global stop of the server |
 | `goal_timeout_s` | `120` | a goal without a result after this long is cancelled |
 | `unsigned_cancel` | `true` | `cmd/motion_cancel` cancels the running goal without a signature (it only stops); `false` refuses it and leaves the cancel to the signed abort |
+| `supervise_s` | `0` | while a goal runs, a cell that is not READY or a machine state not heard for this many seconds cancels it (the answer says `canceled` and why); `0` does not supervise |
 | `nav2_enabled`, `nav2_action`, `nav2_frame`, `nav2_waypoints_file` | `false`, `navigate_to_pose`, `map`, `""` | the Nav2 side and its list |
 | `moveit_enabled`, `moveit_action`, `moveit_targets_file` | `false`, `move_action`, `""` | the MoveIt side and its list |
 | `moveit_velocity_scale`, `moveit_acceleration_scale`, `moveit_planning_time_s` | `0.1`, `0.1`, `5.0` | MoveIt scaling (above 0, at most 1) and planning time |
