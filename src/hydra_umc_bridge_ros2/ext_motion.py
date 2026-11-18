@@ -45,6 +45,7 @@ from .in_doubt import in_doubt_policy, in_doubt_report
 _LOG = logging.getLogger(__name__)
 
 NAME = "motion"
+CANCEL_VERB = "cmd/motion_cancel"
 TOPIC_PREFIX = "hydra/bridges/ros2/"
 NAV2_VERB = "cmd/nav_goal"
 MOVEIT_VERB = "cmd/move_named"
@@ -68,6 +69,8 @@ class MotionSettings:
     # the bridge must follow the global stop of the server before it may move anything
     require_global_stop: bool = True
     goal_timeout_s: float = 120.0
+    # `cmd/motion_cancel` cancels the goal that is running without a signature (it only ever stops things); false refuses it and leaves the cancel to the signed abort
+    unsigned_cancel: bool = True
     nav2_enabled: bool = False
     nav2_action: str = "navigate_to_pose"
     nav2_frame: str = "map"
@@ -179,6 +182,18 @@ def parse(section: object) -> MotionSettings:
 StatusCallback = Callable[[str, str], None]
 
 
+def _is_abort(payload: bytes) -> bool:
+    """True when a signed or plain job message carries the phase ABORT (read only to repeat the cancel; the signature was already checked by the intake)."""
+    try:
+        body = json.loads(payload)
+    except (ValueError, UnicodeDecodeError):
+        return False
+    job = body.get("command", body) if isinstance(body, dict) else None
+    if isinstance(job, dict) and isinstance(job.get("job"), dict):
+        job = job["job"]
+    return isinstance(job, dict) and str(job.get("phase", "")).upper() == "ABORT"
+
+
 class MotionAdapter(Protocol):
     """What the gateway needs of a robot interface: whether its action server is up now, a goal, and a cancel."""
 
@@ -249,6 +264,9 @@ class MotionGateway:
         if message.refusal is not None:
             return self._answer(verb, dict(message.refusal, goal_status="refused"))
         if message.repeat_answer is not None:
+            # a repeated ABORT is answered from the store, but the cancel goes out again: the first one may have been lost on the way to the action server
+            if _is_abort(payload):
+                self.cancel_active()
             return [MqttPublish(f"{TOPIC_PREFIX}{verb}/result", message.repeat_answer)]
         job = message.job
         assert job is not None
@@ -568,6 +586,8 @@ class MotionExtension(BridgeExtension):
             self.verbs[MOVEIT_VERB] = load_targets(settings.moveit_targets_file)
         self.job_verbs = frozenset(self.verbs)
         self._topics = {f"{TOPIC_PREFIX}{verb}": verb for verb in self.verbs}
+        self._cancel_topic = f"{TOPIC_PREFIX}{CANCEL_VERB}"
+        self.stop_verbs = frozenset({CANCEL_VERB}) if settings.unsigned_cancel else frozenset()
         self._publish: Publish | None = None
         self.gateway: MotionGateway | None = None
         self._own_store: IdempotencyStore | None = None
@@ -580,10 +600,16 @@ class MotionExtension(BridgeExtension):
         }
 
     def claims(self, topic: str) -> bool:
-        return topic in self._topics
+        return topic in self._topics or (self.settings.unsigned_cancel and topic == self._cancel_topic)
 
     def on_message(self, topic: str, payload: bytes, retained: bool) -> list[MqttPublish]:
         gateway = self.gateway
+        if topic == self._cancel_topic:
+            if retained:
+                return []
+            cancelled = gateway.cancel_active() if gateway is not None else False
+            body = {"allowed": True, "goal_status": "cancel", "cancelled": cancelled, "reason": "the running goal was cancelled" if cancelled else "no goal was running"}
+            return [MqttPublish(f"{topic}/result", json.dumps(body))]
         if gateway is None:
             return [MqttPublish(f"{topic}/result", json.dumps({"allowed": False, "reason": "the motion extension has not started", "goal_status": "refused"}))] if not retained else []
         return gateway.handle(self._topics[topic], topic, payload, retained)
