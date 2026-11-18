@@ -362,11 +362,13 @@ class MessageDispatcher(SharedMessageDispatcher):
     """
 
     def __init__(self, bridge: object, stop_verbs: frozenset[str] = STOP_VERBS, **limits: int) -> None:
-        super().__init__(bridge, TOPIC_PREFIX, stop_verbs, **limits)  # type: ignore[arg-type]
-        guard = getattr(bridge, "global_stop", None)
-        self._global_stop = guard if isinstance(guard, GlobalStopGuard) else None
         host = getattr(bridge, "extensions", None)
         self._extensions = host if isinstance(host, ExtensionHost) else None
+        # the verbs that an extension only stops with (the cancel of a motion) join the lane of the stop commands
+        lane = stop_verbs | self._extensions.stop_verbs() if self._extensions is not None else stop_verbs
+        super().__init__(bridge, TOPIC_PREFIX, lane, **limits)  # type: ignore[arg-type]
+        guard = getattr(bridge, "global_stop", None)
+        self._global_stop = guard if isinstance(guard, GlobalStopGuard) else None
         self._bridge_handler = bridge
 
     def on_message(self, client: object, userdata: object, message: object) -> None:

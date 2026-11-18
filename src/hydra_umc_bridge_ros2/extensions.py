@@ -44,6 +44,8 @@ class BridgeExtension:
     name = "extension"
     moving_verbs: frozenset[str] = frozenset()
     job_verbs: frozenset[str] = frozenset()
+    # verbs that only stop things: they run on the lane of the stop commands, so they never wait behind another command
+    stop_verbs: frozenset[str] = frozenset()
 
     def subscriptions(self) -> list[tuple[str, int]]:
         return []
@@ -102,6 +104,9 @@ class ExtensionHost:
 
     def job_verbs(self) -> frozenset[str]:
         return frozenset(verb for item in self._items for verb in item.job_verbs)
+
+    def stop_verbs(self) -> frozenset[str]:
+        return frozenset(verb for item in self._items for verb in item.stop_verbs)
 
     def stop_motion(self) -> None:
         """Ask every extension to cancel what it has moving; one that fails does not keep the others from stopping."""

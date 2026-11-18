@@ -518,6 +518,51 @@ class AbortTests(unittest.TestCase):
         self.assertEqual((answer["cancelled"], rig.safe_stop.calls), (False, 1))
 
 
+class CancelVerbTests(unittest.TestCase):
+    CANCEL = f"{TOPIC_PREFIX}cmd/motion_cancel"
+
+    def test_it_cancels_the_running_goal_without_a_signature_and_never_moves_anything(self):
+        rig = Rig(self)
+        rig.send(NAV_TOPIC, signed(NAV_TOPIC, make_job(key="go")))
+        answer = rig.send(self.CANCEL, b"{}")
+        self.assertTrue(answer["allowed"])
+        self.assertTrue(answer["cancelled"])
+        self.assertEqual((rig.nav.cancels, rig.safe_stop.calls), (1, 0))
+        self.assertEqual(len(rig.nav.sent), 1)
+
+    def test_with_no_goal_running_it_says_so(self):
+        rig = Rig(self)
+        answer = rig.send(self.CANCEL, b"")
+        self.assertFalse(answer["cancelled"])
+        self.assertIn("no goal", answer["reason"])
+
+    def test_it_passes_during_a_global_stop_and_a_retained_copy_is_ignored(self):
+        rig = Rig(self)
+        rig.send(NAV_TOPIC, signed(NAV_TOPIC, make_job(key="go")))
+        rig.guard.observe(json.dumps({"state": "SAFE_STOP"}).encode())
+        self.assertTrue(rig.send(self.CANCEL, b"{}")["cancelled"])
+        self.assertEqual(rig.bridge.handle_message(self.CANCEL, b"{}", retained=True), [])
+
+    def test_the_switch_turns_it_off_and_it_joins_the_lane_of_the_stop_commands_only_when_on(self):
+        on = Rig(self)
+        self.assertIn("cmd/motion_cancel", on.bridge.extensions.stop_verbs())
+        off = Rig(self, unsigned_cancel=False)
+        self.assertNotIn("cmd/motion_cancel", off.bridge.extensions.stop_verbs())
+        self.assertEqual(off.bridge.handle_message(self.CANCEL, b"{}"), [])
+        self.assertTrue(parse({"enabled": False}).unsigned_cancel)
+
+    def test_a_repeated_abort_cancels_again_and_gets_the_stored_answer(self):
+        rig = Rig(self)
+        rig.send(NAV_TOPIC, signed(NAV_TOPIC, make_job(key="go")))
+        abort = signed(MOVE_TOPIC, make_job(JobPhase.ABORT, key="stop", target=None))
+        first = rig.send(MOVE_TOPIC, abort)
+        self.assertEqual(rig.nav.cancels, 1)
+        rig.send(NAV_TOPIC, signed(NAV_TOPIC, make_job(key="go-2")))
+        again = rig.send(MOVE_TOPIC, abort)
+        self.assertEqual(rig.nav.cancels, 2, "the repeat of the abort cancels the goal that runs now")
+        self.assertEqual(again["goal_status"], first["goal_status"])
+
+
 class StatusTests(unittest.TestCase):
     def test_statuses_of_the_goal_are_published_and_the_last_one_frees_the_extension(self):
         rig = Rig(self)

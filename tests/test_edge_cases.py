@@ -125,7 +125,7 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(b.handle_message(f"{TOPIC_PREFIX}cmd/safe_stop", b"", retained=True), [])
 
     def test_safe_stop_is_the_only_verb_with_its_own_lane(self):
-        self.assertEqual(STOP_VERBS, frozenset({"cmd/safe_stop"}))
+        self.assertEqual(STOP_VERBS, frozenset({"cmd/safe_stop"}))  # the cancel of a motion joins this lane through the motion extension
 
     def test_an_oversized_safe_stop_is_refused_on_its_own_result_topic(self):
         publishes = bridge().handle_message(f"{TOPIC_PREFIX}cmd/safe_stop", b"x" * (MAX_PAYLOAD_BYTES + 1))
