@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The README names the settings of the motion extension that stop a goal:** the configuration table lists `extensions.motion.unsigned_cancel` (`cmd/motion_cancel`) and `extensions.motion.supervise_s`, and the test counts are current. The README and its seven translations are regenerated.
+
 - **The motion extension can supervise the goal while it runs (`extensions.motion.supervise_s`, off by default):** with a number of seconds above 0, a cell that stops being READY, or a machine state that is not heard, for that long cancels the goal and the result says `canceled` with the reason. At 0 the goal only has its time limit, as before.
 
 - **The motion extension answers `cmd/motion_cancel`, which cancels the running goal without a signature:** it only ever stops things (it never starts a goal and does not call the safe stop service), runs on the lane of the stop commands, passes during a global stop and ignores a retained copy. `extensions.motion.unsigned_cancel` (true by default) turns it off, which leaves the cancel to the signed abort. A repeated abort is still answered from the store but now cancels the goal again.
