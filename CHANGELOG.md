@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The status table of the README shows the exact test count as confirmed:** the table is regenerated from the recorded data, so the Tests line is green for a count that was collected and that a workflow runs. The README and its seven translations are regenerated.
+
 - **The README names the settings of the motion extension that stop a goal:** the configuration table lists `extensions.motion.unsigned_cancel` (`cmd/motion_cancel`) and `extensions.motion.supervise_s`, and the test counts are current. The README and its seven translations are regenerated.
 
 - **The motion extension can supervise the goal while it runs (`extensions.motion.supervise_s`, off by default):** with a number of seconds above 0, a cell that stops being READY, or a machine state that is not heard, for that long cancels the goal and the result says `canceled` with the reason. At 0 the goal only has its time limit, as before.
