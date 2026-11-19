@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.2.0]
+
 - **The status table of the README shows the exact test count as confirmed:** the table is regenerated from the recorded data, so the Tests line is green for a count that was collected and that a workflow runs. The README and its seven translations are regenerated.
 
 - **The README names the settings of the motion extension that stop a goal:** the configuration table lists `extensions.motion.unsigned_cancel` (`cmd/motion_cancel`) and `extensions.motion.supervise_s`, and the test counts are current. The README and its seven translations are regenerated.
@@ -14,6 +16,7 @@ All notable changes to this project are documented here.
 
 - **A global stop, a safe stop and an abort cancel the goal that Nav2 or MoveIt is running:** with the motion extension on, the announcement of the global stop only refused new commands, and `cmd/safe_stop` and the abort of `cmd/job` called the safe stop service without touching the goal in progress, so the vehicle or the arm kept going until the goal ended. Every extension now has a `stop_motion` hook that cancels what it has moving; it runs when the announcement is anything but a clear READY (unreadable included), on `cmd/safe_stop` before the service is called, and on an abort of `cmd/job`. A cancel that fails does not keep the rest of the stop from going out. 2 new tests.
 
+- Successful incremental build: synchronized package metadata and `hydra-umc.project.json`.
 
 ## [0.1.9]
 
