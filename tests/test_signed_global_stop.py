@@ -39,6 +39,25 @@ class SignedGlobalStop(unittest.TestCase):
         guard.observe(json.dumps(sign_announcement(DEFAULT_TOPIC, announcement("READY"), KEY)).encode())
         self.assertFalse(guard.blocks())
 
+    def test_an_old_release_does_not_end_the_stop_after_a_restart(self):
+        with tempfile.TemporaryDirectory() as folder:
+            key_file = Path(folder) / "stop.key"
+            key_file.write_bytes(KEY)
+            os.chmod(key_file, 0o600)
+            base = f"HYDRA_UMC_{GLOBAL_STOP_ENVIRONMENT_NAME}_GLOBAL_STOP"
+            environment = {base: "1", f"{base}_KEY_FILE": str(key_file), f"{base}_STATE_FILE": str(Path(folder) / "mark.json")}
+            old, stop, current = (json.dumps(sign_announcement(DEFAULT_TOPIC, announcement(state), KEY, now_ms=at)).encode()
+                                  for state, at in (("READY", 1000), ("SAFE_STOP", 2000), ("READY", 3000)))
+            with mock.patch.dict(os.environ, environment):
+                first = GlobalStopGuard.from_environment(GLOBAL_STOP_ENVIRONMENT_NAME)
+                for payload in (old, stop, current):
+                    first.observe(payload)
+                restarted = GlobalStopGuard.from_environment(GLOBAL_STOP_ENVIRONMENT_NAME)
+                restarted.observe(old)
+                self.assertTrue(restarted.blocks())
+                restarted.observe(current)
+                self.assertFalse(restarted.blocks())
+
 
 if __name__ == "__main__":
     unittest.main()
