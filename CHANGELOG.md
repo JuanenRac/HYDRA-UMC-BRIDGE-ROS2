@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The signed release of the global stop is remembered across restarts:** with `HYDRA_UMC_ROS2_GLOBAL_STOP_KEY_FILE`, the bridge keeps on disk the newest signed announcement it accepted and the `READY` in force, so an old signed `READY` published again after a restart ends nothing. A file that is damaged, altered or made for another key or topic keeps the bridge still until an operator removes it and restarts; when it cannot be written a `READY` is not believed; a bridge that was stopped starts stopped. Without the variable the file is in `$STATE_DIRECTORY` (systemd), else in `$XDG_STATE_HOME/hydra-umc` or `~/.local/state/hydra-umc`; in a container keep it on a volume. `HYDRA_UMC_ROS2_GLOBAL_STOP_STATE_FILE` names the file. The SDK pin moves to the commit that carries it.
 - **Only a signed release ends the global stop, when asked:** with `HYDRA_UMC_ROS2_GLOBAL_STOP_KEY_FILE` every `SAFE_STOP` is obeyed as before and a `READY` counts only when the server signed it with that key. Off without a key file. It needs the SDK version that carries the signed announcement.
 
 ## [0.2.0]
