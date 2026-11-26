@@ -102,6 +102,10 @@ Set `HYDRA_UMC_SDK_ROOT` when the SDK is not a sibling checkout. Use `build-test
 
 Keep a new script in the repository root only when it is an operator entry point. Add the standard copyright header, state whether it mutates version/CHANGELOG, print numbered steps, and end `.bat` scripts with `pause`. Put reusable Python logic under `tools/`, compile it in `tools/build_test.py`, add deterministic tests and document the command in the README and this guide. A script must not start ROS 2, discover a graph or send a command implicitly.
 
+## Where the cell state comes from
+
+The bridge always reports the cell as `FAULT` or `SAFE_STOP` when the state topic of the machine says so. For the rest it reads the source named by `HYDRA_UMC_ROS2_CELL_STATE_SOURCE`: `fixed` (the word of `HYDRA_UMC_ROS2_CELL_STATE_VALUE`), `file` (`..._PATH`, a small file somebody keeps fresh) or `safety_zones` (the signed verdict of the safety zones service, `..._PATH` or `..._URL` with `..._KEY_FILE`); whatever cannot be trusted reads as `SAFE_STOP`, and a source that cannot be built stops the start. Without a source the cell is `READY` as before, except with the motion extension on: then it is `INHIBITED`, so no goal and no productive job is taken until a source is given (`fixed` with `READY` is the explicit way to the old behaviour). The answer to a job names the source in `cell_source`.
+
 ## Following the global stop
 
 The server can announce a global stop on `<mqtt prefix>/safety/estop` (a retained `SafetyState` message: `SAFE_STOP`, later `READY`; the contract is `docs/GLOBAL_STOP.md` of HYDRA-UMC-SERVER). This bridge can follow it. It is off by default and then behaves exactly as before: it does not even subscribe to the topic.

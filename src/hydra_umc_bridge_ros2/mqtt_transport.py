@@ -186,6 +186,8 @@ class Ros2MqttBridge:
         self._observed: MachineState | None = None
         # the optional extensions (extensions.py): none unless the configuration names them
         self.extensions = ExtensionHost()
+        # which source the cell state is read from ("none", "fixed", "file", "safety_zones"), said in the answer to a job; None (a bridge built by hand) says nothing
+        self.cell_source: str | None = None
 
     def start_observing(self) -> None:
         self._observing = True
@@ -322,6 +324,8 @@ class Ros2MqttBridge:
                 answer["reason"] = f"abort accepted and the safe stop service was called: {stop.reason}"
             else:
                 answer["reason"] = f"abort accepted, but the safe stop service did not confirm: {stop.reason}"
+        if self.cell_source is not None:
+            answer["cell_source"] = self.cell_source
         publish = MqttPublish(result_topic, json.dumps(answer))
         if self._idempotency is not None and intake.accepted:
             self._idempotency.remember(job.idempotency_key, publish.payload)
