@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Only a signed release ends the global stop, when asked:** with `HYDRA_UMC_ROS2_GLOBAL_STOP_KEY_FILE` every `SAFE_STOP` is obeyed as before and a `READY` counts only when the server signed it with that key. Off without a key file. It needs the SDK version that carries the signed announcement.
+
 ## [0.2.0]
 
 - **The status table of the README shows the exact test count as confirmed:** the table is regenerated from the recorded data, so the Tests line is green for a count that was collected and that a workflow runs. The README and its seven translations are regenerated.

@@ -35,7 +35,7 @@ from typing import Any, Callable
 
 from hydra_umc_sdk.bridge_contract import CellState, MachineState
 from hydra_umc_sdk.bridge_transport import MqttPublish
-from hydra_umc_sdk.global_stop import STATE_UNKNOWN, STATE_READY, GlobalStopGuard, GlobalStopSettings
+from hydra_umc_sdk.global_stop import STATE_UNKNOWN, STATE_READY, GlobalStopGuard, GlobalStopSettings, settings_from_environment
 
 from .extensions import BridgeExtension, ExtensionConfigError, Publish, section_from_dict
 
@@ -104,7 +104,8 @@ class CellStatusFeed:
         self._lock = threading.Lock()
         self._robots: dict[str, object] = {}
         self._server_online: bool | None = None
-        self._guard = GlobalStopGuard(GlobalStopSettings(True, f"{settings.swarm_prefix}/safety/estop", settings.estop_required))
+        key_file = settings_from_environment("ROS2").ready_key_file  # only a signed READY ends a stop when it is set
+        self._guard = GlobalStopGuard(GlobalStopSettings(True, f"{settings.swarm_prefix}/safety/estop", settings.estop_required, key_file))
         self.dropped_cells = 0
 
     def topics(self) -> tuple[str, str]:
