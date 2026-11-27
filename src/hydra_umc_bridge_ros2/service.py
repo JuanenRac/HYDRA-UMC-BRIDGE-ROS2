@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Callable
 
 from hydra_umc_sdk.bridge_contract import CellState, MachineState
+from hydra_umc_sdk.cell_state_source import CellStateSource, CellStateSourceError, config_from_environment
 from hydra_umc_sdk.job_intake import IdempotencyStore
 
 from .config_access import (
@@ -220,6 +221,14 @@ def _read_secret(path: str, what: str) -> str:
 
 def build_bridge(config: ServiceConfig, node_factory: Callable[[str], object] = create_ros2_node) -> Ros2MqttBridge:
     """The node and the bridge around it. The node factory is injectable for the tests; it raises RuntimeError when rclpy is not installed."""
+    # where the cell is read besides what the machine says (HYDRA_UMC_ROS2_CELL_STATE_SOURCE and its companions, the shared readers of the SDK); built first: a source that cannot be used stops the start
+    try:
+        source = config_from_environment("ROS2")
+        reader = CellStateSource(source) if source is not None else None
+    except CellStateSourceError as error:
+        raise ConfigError(f"the cell state source cannot be used: {error}") from error
+    # a bridge that sends motion goals does not take the cell for READY because nobody says otherwise
+    motion = bool(getattr(config.extensions.get("motion"), "enabled", False))
     node = node_factory(config.node.name)
     settings = apply_ros_parameters(node, config.node)
     holder: list[Ros2MqttBridge] = []
@@ -231,7 +240,9 @@ def build_bridge(config: ServiceConfig, node_factory: Callable[[str], object] = 
             return CellState.FAULT
         if observed is MachineState.SAFE_STOP:
             return CellState.SAFE_STOP
-        return CellState.READY
+        if reader is not None:
+            return CellState(reader.read())
+        return CellState.INHIBITED if motion else CellState.READY
 
     store = IdempotencyStore(settings.idempotency_file) if settings.idempotency_file else IdempotencyStore()
     bridge = Ros2MqttBridge(
@@ -242,6 +253,7 @@ def build_bridge(config: ServiceConfig, node_factory: Callable[[str], object] = 
         observed_max_age_seconds=settings.observed_max_age_s or None,
         abort_calls_safe_stop=settings.abort_calls_safe_stop,
     )
+    bridge.cell_source = source.source if source is not None else "none"
     holder.append(bridge)
     build_extensions(config.extensions, bridge)
     return bridge
