@@ -211,9 +211,11 @@ def apply_ros_parameters(node: object, config: NodeConfig) -> NodeConfig:
 
 def _read_secret(path: str, what: str) -> str:
     try:
-        value = Path(path).read_text(encoding="utf-8").strip()
+        value = Path(path).read_text(encoding="utf-8-sig").strip()  # a byte order mark is not part of the secret
     except OSError as error:
         raise ConfigError(f"cannot read the {what} file: {error.strerror or error}") from error
+    except UnicodeDecodeError:
+        raise ConfigError(f"cannot read the {what} file: it is not UTF-8 text") from None
     if not value:
         raise ConfigError(f"the {what} file is empty")
     return value
