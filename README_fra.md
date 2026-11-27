@@ -18,14 +18,14 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
-  <img src="https://img.shields.io/badge/Tests-463%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-472%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.1-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-> **Vérification d'honnêteté - ce qui fonctionne réellement aujourd'hui :** le cœur de coordination sans dépendance (`coordinator.py` avec `Ros2Coordinator`, faisant passer chaque envoi par le propre `evaluate_job()` de `HYDRA-UMC-SDK`), le vrai transport `rclpy` (importé de façon paresseuse) pour `std_srvs/Trigger` et `std_msgs/String` (`rclpy_transport.py` avec `Ros2SafeStopClient`/`Ros2StateSubscriber`), et le transport de commandes/état MQTT (`mqtt_transport.py`) sont réels et couverts par 463 tests unitaires qui passent (`python tools/build_test.py` - `test_coordinator.py`, `test_rclpy_transport.py`, `test_mqtt_transport.py`, `test_intake.py`, `test_mqtt_environment.py`, `test_hardening.py`). Rien de tout cela n'a été testé contre une vraie installation ROS 2, un vrai réseau DDS, ou un vrai broker MQTT - `test_rclpy_transport.py` tourne contre un nœud/éditeur factice et `test_mqtt_transport.py` contre un client de broker factice, si bien que `rclpy`/`std_srvs`/`std_msgs` n'ont même pas besoin d'être installés pour que ces tests passent. Les contrats personnalisés `.srv`/`.action` de `inspect_service`/`job_action` sont écrits dans `interfaces/hydra_umc_interfaces` et vérifiés sans ROS 2 par rapport au SDK (`interface_contract.py`), mais aucun client ne les utilise encore et le paquet n'a jamais été compilé avec `colcon`. Voir « Feuille de route et limites connues » ci-dessous, qui le dit déjà clairement, et `CHANGELOG.md` pour ce qui a été exactement livré jusqu'à présent. Le transport MQTT a aussi été exécuté contre un vrai HYDRA-UMC-MQTT-BROKER sur une machine de développement (`tests/test_broker_integration.py`, ignoré si aucun broker n'est installé) : publication et abonnement en QoS 0, 1 et 2, la disponibilité retenue et son dernier testament, et le retour après l'arrêt puis le redémarrage du broker.
+> **Vérification d'honnêteté - ce qui fonctionne réellement aujourd'hui :** le cœur de coordination sans dépendance (`coordinator.py` avec `Ros2Coordinator`, faisant passer chaque envoi par le propre `evaluate_job()` de `HYDRA-UMC-SDK`), le vrai transport `rclpy` (importé de façon paresseuse) pour `std_srvs/Trigger` et `std_msgs/String` (`rclpy_transport.py` avec `Ros2SafeStopClient`/`Ros2StateSubscriber`), et le transport de commandes/état MQTT (`mqtt_transport.py`) sont réels et couverts par 472 tests unitaires qui passent (`python tools/build_test.py` - `test_coordinator.py`, `test_rclpy_transport.py`, `test_mqtt_transport.py`, `test_intake.py`, `test_mqtt_environment.py`, `test_hardening.py`). Rien de tout cela n'a été testé contre une vraie installation ROS 2, un vrai réseau DDS, ou un vrai broker MQTT - `test_rclpy_transport.py` tourne contre un nœud/éditeur factice et `test_mqtt_transport.py` contre un client de broker factice, si bien que `rclpy`/`std_srvs`/`std_msgs` n'ont même pas besoin d'être installés pour que ces tests passent. Les contrats personnalisés `.srv`/`.action` de `inspect_service`/`job_action` sont écrits dans `interfaces/hydra_umc_interfaces` et vérifiés sans ROS 2 par rapport au SDK (`interface_contract.py`), mais aucun client ne les utilise encore et le paquet n'a jamais été compilé avec `colcon`. Voir « Feuille de route et limites connues » ci-dessous, qui le dit déjà clairement, et `CHANGELOG.md` pour ce qui a été exactement livré jusqu'à présent. Le transport MQTT a aussi été exécuté contre un vrai HYDRA-UMC-MQTT-BROKER sur une machine de développement (`tests/test_broker_integration.py`, ignoré si aucun broker n'est installé) : publication et abonnement en QoS 0, 1 et 2, la disponibilité retenue et son dernier testament, et le retour après l'arrêt puis le redémarrage du broker.
 
 > **État de la sûreté et de la cybersécurité :** cet écosystème n'est pas un système de sécurité certifié. Il n'existe pas encore de chaîne d'E-STOP matérielle, ni de limites ou de verrouillages imposés par le firmware, ni de commande de mouvement vérifiée ; les images de firmware sont contrôlées par CRC-32 et une signature Ed25519, et une compilation de version refuse les clés de développement publiées (les chargeurs d'URTC derrière le relais n'utilisent plus de clé partagée : la carte principale vérifie un enregistrement Ed25519 contre une table de clés publiques, et une carte d'extension n'installe une image que si la carte principale lui a confirmé cette image exacte) ; TLS et TLS mutuel sont optionnels et désactivés par défaut ; aucune carte propre n'a encore été assemblée ni testée. Lisez la [base de sécurité](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md) et le [modèle de menaces](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md) avant de vous fier à une affirmation d'ici pour la sécurité d'une personne.
 
@@ -37,7 +37,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.2.1` |
 | Maturité | Fonctionnel |
-| Tests | 463 (`python tools/build_test.py`) |
+| Tests | 472 (`python tools/build_test.py`) |
 | Technologie | Python / ROS 2 / rclpy / HYDRA-UMC-SDK |
 | Cible | Le Raspberry Pi CM5 d'une cellule HYDRA-UMC |
 | Sur matériel réel | Simulé seulement : testé avec des émulateurs, des doubles de test ou des simulateurs ; aucune exécution sur du matériel réel n'est consignée pour cette version |
@@ -53,7 +53,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 | Domaine | État | Ce que cela veut dire ici |
 |---|---|---|
 | Logiciel | 🟡 | Fonctionne pour son usage principal ; la vérification d'honnêteté de ce README liste ce qui manque encore |
-| Tests | 🟢 | 463 tests automatiques, exécutés à chaque modification |
+| Tests | 🟢 | 472 tests automatiques, exécutés à chaque modification |
 | Matériel réel | 🟠 | Simulé seulement : testé avec des émulateurs, des doubles de test ou des simulateurs ; aucune exécution sur du matériel réel n'est consignée pour cette version |
 | Interface et protocoles | 🟡 | Les routes ou les messages proposés sont documentés et testés avec un client ; tous les clients ne les ont pas encore utilisés |
 | Intégration | 🟠 | Ses messages et ses routes sont vérifiés par rapport aux contrats partagés du SDK ; il n'a pas fonctionné avec l'équipement réel |
@@ -189,7 +189,7 @@ Le nom d'utilisateur, le mot de passe et les fichiers TLS viennent des variables
 
 ## 🧪 Tests
 
-463 cas `unittest` automatiques s'exécutent avec `python tools/build_test.py` (qui compile aussi chaque module). Les tests n'ont besoin ni de matériel, ni de réseau, ni de paquet optionnel : ceux qui exigeraient `paho-mqtt`, `pyserial` ou une bibliothèque de fabricant utilisent un substitut ou sont ignorés si le paquet manque.
+472 cas `unittest` automatiques s'exécutent avec `python tools/build_test.py` (qui compile aussi chaque module). Les tests n'ont besoin ni de matériel, ni de réseau, ni de paquet optionnel : ceux qui exigeraient `paho-mqtt`, `pyserial` ou une bibliothèque de fabricant utilisent un substitut ou sont ignorés si le paquet manque.
 
 | Fichier de tests | Tests | Ce qu'il couvre |
 |---|---|---|
