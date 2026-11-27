@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [0.2.1] - Cell state from a real source, signed global stop release and secret files with a byte order mark
 
 - **Token and password files saved with a byte order mark are read:** a file written by an editor of Windows as "UTF-8 with BOM" kept the mark in front of the secret, so the credential was refused or could not be sent in a header. The mark is dropped now; a file in another encoding (UTF-16) is refused with a clear message. The same holds for the identity key file of the server (shared module of the SDK).
 - **The state of the cell can come from a real source, and motion needs one:** `HYDRA_UMC_ROS2_CELL_STATE_SOURCE` (`fixed`, `file` or `safety_zones`, the shared readers of the SDK) is what the gate reads besides the state of the machine, and the answer to a job names it in `cell_source`. With the motion extension on and no source the cell is `INHIBITED` instead of `READY`: set a source (or `fixed` with `READY`, on purpose). Without motion nothing changes. Tests.
